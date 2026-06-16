@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
 use App\Models\Delivery;
-use App\Models\StockLog;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class AdminDeliveryController extends Controller
 {
@@ -35,40 +35,30 @@ class AdminDeliveryController extends Controller
         $order = \App\Models\Order::with(['customer.zone', 'sales', 'orderDetail.product'])
             ->findOrFail($delivery->order_id);
 
-        // Fetch signatures
-        $adminKantor = \App\Models\User::where('role', 'admin_kantor')->whereNotNull('signature')->first();
-        $adminGudang = \App\Models\User::where('role', 'admin_gudang')->whereNotNull('signature')->first();
-
-        return view('partials.surat-jalan', compact('order', 'delivery', 'adminKantor', 'adminGudang'));
+        return view('partials.surat-jalan', compact('order', 'delivery'));
     }
 
     public function updateStatusToGudang($id)
     {
         try {
-            \Illuminate\Support\Facades\DB::beginTransaction();
+            DB::beginTransaction();
 
             $delivery = Delivery::with('order')->findOrFail($id);
             $delivery->update([
                 'delivery_status' => 'pending_admin_gudang',
-                'acc_kantor' => true
+                'acc_kantor' => true,
+                'barcode_office' => Str::random(40)
             ]);
 
-            if ($delivery->order) {
-                StockLog::where('reference', $delivery->order->order_number)->update([
-                    'verification_status' => 'sesuai',
-                    'final_status' => 'completed',
-                ]);
-            }
-
-            \Illuminate\Support\Facades\DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Surat jalan berhasil di TTD dan diteruskan ke Admin Gudang.',
+                'message' => 'Surat jalan berhasil di TTD dan diteruskan ke Admin Gudang!',
                 'redirect_url' => route('admin.deliveries.index')
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui status: ' . $e->getMessage()

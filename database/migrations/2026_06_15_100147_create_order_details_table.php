@@ -4,21 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('order_details', function (Blueprint $table) {
-            $table->id('id_order_detail');
-            $table->foreignId('order_id')->constrained('orders', 'id_order');
-            $table->foreignId('product_id')->constrained('products', 'id_product');
+            $table->bigIncrements('id_order_detail');
+            $table->unsignedBigInteger('order_id')->index('order_details_order_id_foreign');
+            $table->unsignedBigInteger('product_id')->index('order_details_product_id_foreign');
             $table->integer('qty');
             $table->integer('bonus_qty')->nullable();
             $table->decimal('price_at_time');
             $table->decimal('discount')->nullable();
-            $table->decimal('total_item_price', 10, 2);
+            $table->decimal('total_item_price', 10);
             $table->timestamps();
         });
     }

@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->id('id_customer');
-            $table->foreignId('user_id')->constrained('users', 'id_user')->onDelete('cascade');
-            $table->foreignId('zone_id')->constrained('zones', 'id_zone');
+            $table->bigIncrements('id_customer');
+            $table->unsignedBigInteger('user_id')->index('customers_user_id_foreign');
+            $table->unsignedBigInteger('zone_id')->index('customers_zone_id_foreign');
             $table->string('customer_name');
             $table->text('address')->nullable();
             $table->string('phone');

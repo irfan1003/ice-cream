@@ -20,6 +20,11 @@ class Product extends Model
         return $this->hasMany(StockLog::class, 'product_id', 'id_product');
     }
 
+    public function stockLogs()
+    {
+        return $this->hasMany(StockLog::class, 'product_id', 'id_product');
+    }
+
     public function poDetails()
     {
         return $this->hasMany(PurcaheOrderDetail::class, 'product_id', 'id_product');

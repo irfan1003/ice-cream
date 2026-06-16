@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['product_id', 'user_id', 'verification_status', 'quantity', 'reference', 'type', 'warehouse_note', 'final_status'])]
+#[Fillable(['product_id', 'user_id',  'quantity', 'reference_note', 'type',  'po_supplier_id', 'order_id'])]
 #[Table(key: 'id_log')]
 class StockLog extends Model
 {

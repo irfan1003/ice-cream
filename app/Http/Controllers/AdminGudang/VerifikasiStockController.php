@@ -4,38 +4,81 @@ namespace App\Http\Controllers\AdminGudang;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\SupplierPo;
+use App\Models\SupplierPoDetail;
+use Illuminate\Support\Facades\DB;
 
 class VerifikasiStockController extends Controller
 {
     public function index()
     {
-        $incomingGoods = \App\Models\StockLog::with('product')
-            ->where('type', 'in')
-            ->where('final_status', 'draft')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('reference');
+        // Get Supplier POs with pending and received statuses
+        $poSuppliers = SupplierPo::with('supplier')
+            ->whereIn('status', ['pending', 'received'])
+            ->orderBy('po_date', 'desc')
+            ->get();
 
-        return view('admin-gudang.verifikasi-stock', compact('incomingGoods'));
+        return view('admin-gudang.verifikasi-stock', compact('poSuppliers'));
     }
 
-    public function verify(Request $request)
+    public function terimaBarang($id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                $po = SupplierPo::findOrFail($id);
+                $po->update(['status' => 'received']);
+            });
+
+            return redirect()->route('gudang.verifikasi.index')->with('success', 'PO Supplier berhasil diterima!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menerima PO Supplier: ' . $e->getMessage());
+        }
+    }
+
+    public function showVerifikasi($id)
+    {
+        $poSupplier = SupplierPo::with(['supplier', 'details.product'])->findOrFail($id);
+        return view('admin-gudang.verifikasi-stock-show', compact('poSupplier'));
+    }
+
+    public function storeVerifikasi(Request $request, $id)
     {
         $request->validate([
-            'items' => 'required|array',
-            'items.*.id_log' => 'required|exists:stock_logs,id_log',
-            'items.*.verification_status' => 'required|in:sesuai,tidak_sesuai',
-            'items.*.warehouse_note' => 'nullable|string'
+            'details' => 'required|array',
+            'details.*.is_compatible' => 'nullable|boolean',
+            'details.*.reject_reason' => 'nullable|string|max:255',
         ]);
 
-        foreach ($request->items as $item) {
-            \App\Models\StockLog::where('id_log', $item['id_log'])->update([
-                'verification_status' => $item['verification_status'],
-                'warehouse_note' => $item['warehouse_note'] ?? null,
-                'final_status' => 'draft'
-            ]);
-        }
+        try {
+            DB::transaction(function () use ($request, $id) {
+                $poSupplier = SupplierPo::findOrFail($id);
+                $hasIncompatible = false;
 
-        return redirect()->back()->with('success', 'Verifikasi stok berhasil disimpan');
+                foreach ($request->details as $detailId => $data) {
+                    $detail = SupplierPoDetail::findOrFail($detailId);
+                    $isCompatible = isset($data['is_compatible']) && $data['is_compatible'] == '1';
+
+                    $detail->update([
+                        'is_compatible' => $isCompatible,
+                        'reject_reason' => !$isCompatible ? ($data['reject_reason'] ?? null) : null,
+                    ]);
+
+                    if (!$isCompatible) {
+                        $hasIncompatible = true;
+                    }
+                }
+
+                // Update PO status
+                if ($hasIncompatible) {
+                    $poSupplier->update(['status' => 'pending_office']);
+                } else {
+                    $poSupplier->update(['status' => 'pending_director']);
+                }
+            });
+
+            return redirect()->route('gudang.verifikasi.index')->with('success', 'Verifikasi PO Supplier berhasil disimpan!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memverifikasi PO Supplier: ' . $e->getMessage());
+        }
     }
 }

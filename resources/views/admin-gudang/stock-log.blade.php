@@ -51,63 +51,12 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                        @forelse ($logs ?? [] as $log)
-                            <tr class="hover:bg-slate-50/50 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="font-bold text-slate-900">{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y') }}</div>
-                                    <div class="text-[11px] text-slate-400 mt-0.5">{{ \Carbon\Carbon::parse($log->created_at)->format('H:i') }} WIB</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-900">{{ $log->product->product_name ?? '-' }}</div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">{{ $log->product->category ?? '-' }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($log->type == 'in')
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-emerald-50 text-emerald-600 border-emerald-100">
-                                            Masuk
-                                        </span>
-                                    @else
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-rose-50 text-rose-600 border-rose-100">
-                                            Keluar
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center font-bold text-slate-900">
-                                    {{ $log->type == 'in' ? '+' : '-' }}{{ $log->quantity }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @php
-                                        $statusConfig = [
-                                            'pending' => ['label' => 'Pending', 'class' => 'bg-amber-50 text-amber-600 border-amber-100'],
-                                            'verified' => ['label' => 'Terverifikasi', 'class' => 'bg-emerald-50 text-emerald-600 border-emerald-100'],
-                                            'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-50 text-rose-600 border-rose-100'],
-                                            'completed' => ['label' => 'Selesai', 'class' => 'bg-indigo-50 text-indigo-600 border-indigo-100'],
-                                        ];
-                                        $status = $statusConfig[$log->final_status] ?? ['label' => $log->final_status ?: 'Draft', 'class' => 'bg-slate-50 text-slate-600 border-slate-100'];
-                                    @endphp
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border {{ $status['class'] }}">
-                                        {{ $status['label'] }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <button onclick="showLogDetail({{ json_encode($log) }})"
-                                        class="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-brand-blue hover:text-white transition-all shadow-sm"
-                                        title="Lihat Detail">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
                             <tr>
                                 <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">
-                                    Tidak ada riwayat stok untuk periode ini.
+                                    Data Riwayat Stok Dinonaktifkan Sementara (Proses Refactoring)
                                 </td>
                             </tr>
-                        @endforelse
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>

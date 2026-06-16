@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Spatie\Browsershot\Browsershot;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class VerificationOrderController extends Controller
 {
@@ -31,7 +33,7 @@ class VerificationOrderController extends Controller
 
     public function previewInvoiceFinal($id)
     {
-        $order = Order::with(['customer.zone', 'sales', 'orderDetail.product'])->findOrFail($id);
+        $order = Order::with(['customer', 'customer.zone', 'sales', 'orderDetail.product'])->findOrFail($id);
         return view('direktur.faktur-final', compact('order'));
     }
 
@@ -56,62 +58,55 @@ class VerificationOrderController extends Controller
     public function approve($id)
     {
         try {
-            $order = Order::with(['customer.zone', 'sales', 'orderDetail.product'])->findOrFail($id);
+            $invoiceUrl = null;
+            DB::transaction(function () use ($id, &$invoiceUrl) {
+                $order = Order::with(['customer.zone', 'sales', 'orderDetail.product'])->findOrFail($id);
 
-            // Signature logic
-            // User requested signature_2.png specifically, but ideally we use the logged in user's signature
-            // If signature_2.png is required as per prompt:
-            $signaturePath = storage_path('app/public/signatures/signature_2.png');
+                // Generate unique barcode key
+                $barcodeKey = Str::random(40);
+                $order->barcode_key = $barcodeKey;
 
-            if (!file_exists($signaturePath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'File tanda tangan tidak ditemukan di storage.'
-                ], 404);
-            }
+                // Generate PDF using Browsershot (Puppeteer)
+                $html = view('direktur.faktur-final', [
+                    'order' => $order,
+                    'isPdf' => true
+                ])->render();
 
-            // Convert signature to base64 for PDF embedding
-            $type = pathinfo($signaturePath, PATHINFO_EXTENSION);
-            $data = file_get_contents($signaturePath);
-            $signatureBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                $fileName = 'invoice_' . $order->order_number . '_' . time() . '.pdf';
+                $filePath = 'invoices/' . $fileName;
+                $fullPath = storage_path('app/public/' . $filePath);
 
-            // Generate PDF using Browsershot (Puppeteer)
-            $html = view('direktur.faktur-final', [
-                'order' => $order,
-                'isPdf' => true,
-                'signature' => $signatureBase64
-            ])->render();
+                // Ensure directory exists
+                if (!file_exists(dirname($fullPath))) {
+                    mkdir(dirname($fullPath), 0755, true);
+                }
 
-            $fileName = 'invoice_' . $order->order_number . '_' . time() . '.pdf';
-            $filePath = 'invoices/' . $fileName;
-            $fullPath = storage_path('app/public/' . $filePath);
+                Browsershot::html($html)
+                    ->setNodeBinary('C:/Program Files/nodejs/node.exe')
+                    ->setNpmBinary('C:/Program Files/nodejs/npm.cmd')
+                    ->setChromePath('C:/Users/A c e r/.cache/puppeteer/chrome-headless-shell/win64-148.0.7778.97/chrome-headless-shell-win64/chrome-headless-shell.exe')
+                    ->noSandbox()
+                    ->windowSize(1400, 2000)
+                    ->showBackground()
+                    ->margins(20, 20, 20, 20)
+                    ->format('A4')
+                    ->save($fullPath);
 
-            // Ensure directory exists
-            if (!file_exists(dirname($fullPath))) {
-                mkdir(dirname($fullPath), 0755, true);
-            }
+                // Update Order
+                $order->update([
+                    'status' => 'approved',
+                    'invoice_pdf' => $filePath,
+                    'barcode_key' => $barcodeKey
+                ]);
 
-            Browsershot::html($html)
-                ->setNodeBinary('C:/Program Files/nodejs/node.exe')
-                ->setNpmBinary('C:/Program Files/nodejs/npm.cmd')
-                ->setChromePath('C:/Users/A c e r/.cache/puppeteer/chrome-headless-shell/win64-148.0.7778.97/chrome-headless-shell-win64/chrome-headless-shell.exe')
-                ->noSandbox()
-                ->windowSize(1400, 2000)
-                ->showBackground()
-                ->margins(20, 20, 20, 20)
-                ->format('A4')
-                ->save($fullPath);
-
-            // Update Order
-            $order->update([
-                'status' => 'approved',
-                'invoice_pdf' => $filePath
-            ]);
+                // Store invoice URL for the response
+                $invoiceUrl = asset('storage/' . $filePath);
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pesanan berhasil disetujui dan Faktur PDF telah digenerate.',
-                'invoice_url' => asset('storage/' . $filePath)
+                'invoice_url' => $invoiceUrl
             ]);
         } catch (\Exception $e) {
             return response()->json([

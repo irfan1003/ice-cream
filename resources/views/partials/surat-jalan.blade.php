@@ -173,7 +173,7 @@
 
         .signature-box {
             text-align: center;
-            width: 40%;
+            width: 50%;
         }
 
         .signature-label {
@@ -184,10 +184,12 @@
         }
 
         .signature-img-box {
-            height: 75px;
+            min-height: 90px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            margin: 10px 0;
         }
 
         .signature-img-box img {
@@ -269,7 +271,7 @@
             </div>
             <div class="destination-row">
                 <div class="label">Rute:</div>
-                <div><u>{{  $order->customer->zone?->zone_name ?? '' }}</u></div>
+                <div><u>{{ $order->customer->zone?->zone_name ?? '' }}</u></div>
             </div>
             <!-- <div class="destination-row">
                 <div class="label">Kendaraan:</div>
@@ -297,7 +299,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($order->orderDetail as $index => $detail)
+                    @foreach ($order->orderDetail as $index => $detail)
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td style="text-align: left">{{ $detail->product->product_name }}</td>
@@ -319,7 +321,9 @@
                 <div class="summary-label">Total Jumlah:</div>
                 <div class="summary-value">
                     {{ $order->orderDetail->sum(function ($d) {
-    return $d->qty + $d->bonus_qty; }) }} Item
+                        return $d->qty + $d->bonus_qty;
+                    }) }}
+                    Item
                 </div>
             </div>
         </div>
@@ -338,27 +342,27 @@
             <div class="signature-box">
                 <div class="signature-label">Admin Kantor</div>
                 <div class="signature-img-box">
-                    @if(isset($delivery) && !in_array($delivery->delivery_status, ['pending_admin_kantor', 'ditolak']) && isset($adminKantor) && $adminKantor->signature)
-                        <img src="{{ asset('storage/' . $adminKantor->signature) }}?t={{ time() }}"
-                            alt="Signature Admin Kantor">
+                    @if (isset($delivery) && $delivery->barcode_office)
+                        <div>
+                            {!! QrCode::size(90)->generate(url('/verify-delivery/office/' . $delivery->barcode_office)) !!}
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 5px;">Verifikasi Kantor</small>
+                    @else
+                        <div style="color: #999; font-size: 12px;">Menunggu Verifikasi</div>
                     @endif
-                </div>
-                <div class="signature-line"></div>
-                <div class="signature-name">
-                    ({{ isset($adminKantor) && isset($delivery) && !in_array($delivery->delivery_status, ['pending_admin_kantor', 'ditolak']) ? $adminKantor->name : '           ' }})
                 </div>
             </div>
             <div class="signature-box">
                 <div class="signature-label">Admin Gudang</div>
                 <div class="signature-img-box">
-                    @if(isset($delivery) && in_array($delivery->delivery_status, ['ready', 'shipped', 'delivered']) && isset($adminGudang) && $adminGudang->signature)
-                        <img src="{{ asset('storage/' . $adminGudang->signature) }}?t={{ time() }}"
-                            alt="Signature Admin Gudang">
+                    @if (isset($delivery) && $delivery->barcode_gudang)
+                        <div>
+                            {!! QrCode::size(90)->generate(url('/verify-delivery/gudang/' . $delivery->barcode_gudang)) !!}
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 5px;">Verifikasi Gudang</small>
+                    @else
+                        <div style="color: #999; font-size: 12px;">Menunggu Verifikasi</div>
                     @endif
-                </div>
-                <div class="signature-line"></div>
-                <div class="signature-name">
-                    ({{ isset($adminGudang) && isset($delivery) && in_array($delivery->delivery_status, ['ready', 'completed']) ? $adminGudang->name : '           ' }})
                 </div>
             </div>
         </div>

@@ -7,22 +7,25 @@ use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\BarangMasukController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\KoordinatorSalesController;
+use App\Http\Controllers\Admin\PoSupplierController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RekapPenjualanController;
+use App\Http\Controllers\Admin\SalesController;
+use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\ZoneController;
+use App\Http\Controllers\AdminGudang\HomeController as AdminGudangHomeController;
 use App\Http\Controllers\AdminGudang\IncOrdersController;
 use App\Http\Controllers\AdminGudang\ProfileGudangController;
-use App\Http\Controllers\Auth\Register;
-use App\Http\Controllers\Customer\HomeController as CustomerHomeController;
-use App\Http\Controllers\Admin\KoordinatorSalesController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\SalesController;
-use App\Http\Controllers\AdminGudang\HomeController as AdminGudangHomeController;
 use App\Http\Controllers\AdminGudang\VerifikasiStockController;
 use App\Http\Controllers\Auth\Login;
 use App\Http\Controllers\Auth\Logout;
+use App\Http\Controllers\Auth\Register;
+use App\Http\Controllers\Customer\HomeController as CustomerHomeController;
 use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\PurchaseOrderController;
 use App\Http\Controllers\Direktur\DirekturHomeController;
+// use App\Http\Controllers\Direktur\POSupplierController; (using FQCN to avoid conflict)
 use App\Http\Controllers\Direktur\ProfileController;
 use App\Http\Controllers\Direktur\ReportController;
 use App\Http\Controllers\Direktur\VerificationOrderController;
@@ -51,10 +54,17 @@ Route::post('/register', [Register::class, 'register'])->name('post.register')->
 Route::post('/login', Login::class)->name('post.login');
 Route::post('/logout', Logout::class)->name('logout');
 
+// Public verification route
+Route::get('/verify-order/{barcode_key}', [App\Http\Controllers\PublicVerificationController::class, 'verify']);
+Route::get('/verify-delivery/office/{barcode_key}', [App\Http\Controllers\PublicDeliveryVerificationController::class, 'verifyOffice']);
+Route::get('/verify-delivery/gudang/{barcode_key}', [App\Http\Controllers\PublicDeliveryVerificationController::class, 'verifyGudang']);
+
 Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin_kantor'])->group(function () {
         Route::get('/', [HomeController::class, 'index'])->name('admin.home');
         Route::post('/admin/orders/{id}/mark-as-paid', [HomeController::class, 'markAsPaid'])->name('admin.orders.mark-as-paid');
+        Route::post('/admin/purchase-orders/{id}/update-revised', [HomeController::class, 'updateRevisedPO'])->name('admin.po.update-revised');
+        Route::post('/admin/purchase-orders/{id}/resubmit', [HomeController::class, 'resubmitPO'])->name('admin.po.resubmit');
         Route::get('/admin/products', [ProductController::class, 'index'])->name('products.index');
         Route::get('/json/products', [ProductController::class, 'productJson'])->name('products.json');
         Route::get('/admin/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -74,6 +84,10 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/koordinator-sales/{id}', [KoordinatorSalesController::class, 'update'])->name('admin.koordinator.update');
         Route::delete('/admin/koordinator-sales/{id}', [KoordinatorSalesController::class, 'destroy'])->name('admin.koordinator.destroy');
         Route::get('/barang-masuk', [BarangMasukController::class, 'index'])->name('admin.barang-masuk.index');
+        Route::get('/barang-masuk/{id}', [BarangMasukController::class, 'show'])->name('admin.barang-masuk.show');
+        Route::post('/barang-masuk/{id}/finalize', [BarangMasukController::class, 'finalize'])->name('admin.barang-masuk.finalize');
+        Route::post('/barang-masuk/{id}/send-back', [BarangMasukController::class, 'sendBackToWarehouse'])->name('admin.barang-masuk.send-back');
+        Route::post('/barang-masuk/{id}/force-finalize', [BarangMasukController::class, 'forceFinalizeWithDiscrepancy'])->name('admin.barang-masuk.force-finalize');
         Route::get('/barang-masuk/create', [BarangMasukController::class, 'create'])->name('admin.barang-masuk.create');
         Route::post('/barang-masuk', [BarangMasukController::class, 'store'])->name('admin.barang-masuk.store');
         Route::get('/barang-masuk/{id}/edit', [BarangMasukController::class, 'edit'])->name('admin.barang-masuk.edit');
@@ -108,12 +122,23 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/rekap-penjualan/export', [RekapPenjualanController::class, 'export'])->name('admin.rekap-penjualan.export');
         Route::get('/admin/stock-logs', [\App\Http\Controllers\Admin\StockLogController::class, 'index'])->name('admin.stock-logs.index');
         Route::get('/admin/customers/{id}/json', [CustomerController::class, 'getCustomerJson'])->name('admin.customers.json');
+
+        Route::resource('admin/supplier', SupplierController::class)->names('admin.supplier');
+        Route::get('/admin/supplier/{supplier}/json', [SupplierController::class, 'show'])->name('admin.supplier.json');
+        Route::resource('admin/po-supplier', PoSupplierController::class)->except(['create', 'edit'])->names('admin.po-supplier');
+        Route::get('/admin/po-supplier/{po_supplier}/json', [PoSupplierController::class, 'show'])->name('admin.po-supplier.json');
+        Route::get('/admin/po-supplier/{po_supplier}/export', [PoSupplierController::class, 'export'])->name('admin.po-supplier.export');
     });
     // admin gudang
     Route::prefix('admin-gudang')->group(function () {
         Route::get('/', [AdminGudangHomeController::class, 'index'])->name('gudang.home');
+        Route::get('/stock', [\App\Http\Controllers\AdminGudang\StockController::class, 'index'])->name('gudang.stock.index');
+        Route::get('/stock/{id}/logs', [\App\Http\Controllers\AdminGudang\StockController::class, 'showLogDetail'])->name('gudang.stock.logs');
+        Route::post('/stock/{id}/adjustment', [\App\Http\Controllers\AdminGudang\StockController::class, 'adjustment'])->name('gudang.stock.adjustment');
         Route::get('/verifikasi-stock', [VerifikasiStockController::class, 'index'])->name('gudang.verifikasi.index');
-        Route::post('/verifikasi-stock', [VerifikasiStockController::class, 'verify'])->name('gudang.verifikasi.submit');
+        Route::post('/verifikasi-stock/{id}/terima', [VerifikasiStockController::class, 'terimaBarang'])->name('gudang.verifikasi.terima');
+        Route::get('/verifikasi-stock/{id}', [VerifikasiStockController::class, 'showVerifikasi'])->name('gudang.verifikasi.show');
+        Route::post('/verifikasi-stock/{id}', [VerifikasiStockController::class, 'storeVerifikasi'])->name('gudang.verifikasi.store');
         Route::get('/inc-orders', [IncOrdersController::class, 'index'])->name('gudang.incorders.index');
         Route::get('/inc-orders/{id}/surat-jalan', [IncOrdersController::class, 'previewSuratJalan'])->name('gudang.incorders.surat-jalan');
         Route::get('/inc-orders/drivers', [IncOrdersController::class, 'getDrivers'])->name('gudang.incorders.drivers');
@@ -171,6 +196,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/verification-po', [VerificationPOController::class, 'index'])->name('direktur.verificationpo.index');
         Route::post('/verification-po/{id}/approve', [VerificationPOController::class, 'approve'])->name('direktur.verificationpo.approve');
         Route::post('/verification-po/{id}/reject', [VerificationPOController::class, 'reject'])->name('direktur.verificationpo.reject');
+        Route::get('/po-supplier', [\App\Http\Controllers\Direktur\POSupplierController::class, 'index'])->name('direktur.po-supplier.index');
+        Route::get('/po-supplier/{id}', [\App\Http\Controllers\Direktur\POSupplierController::class, 'show'])->name('direktur.po-supplier.show');
+        Route::post('/po-supplier/{id}/approve', [\App\Http\Controllers\Direktur\POSupplierController::class, 'approve'])->name('direktur.po-supplier.approve');
+        Route::post('/po-supplier/{id}/reject', [\App\Http\Controllers\Direktur\POSupplierController::class, 'reject'])->name('direktur.po-supplier.reject');
         Route::get('/products', [\App\Http\Controllers\Direktur\ProductController::class, 'index'])->name('direktur.products.index');
         Route::get('/profile', [ProfileController::class, 'index'])->name('direktur.profile.index');
         Route::get('/orders/{id}/preview', [VerificationOrderController::class, 'previewInvoiceFinal'])->name('direktur.invoice.preview');

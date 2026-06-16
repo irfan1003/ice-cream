@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Sales;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\StockLog;
 use Illuminate\Http\Request;
 
 class SalesOrderController extends Controller
@@ -79,19 +78,6 @@ class SalesOrderController extends Controller
                 'grand_total' => $grandTotal
             ]);
 
-            foreach ($request->items as $item) {
-                StockLog::create([
-                    'product_id' => $item['id'],
-                    'user_id' => auth()->user()->id_user,
-                    'verification_status' => 'pending',
-                    'quantity' => $item['qty'],
-                    'reference' => $order->order_number,
-                    'type' => 'out',
-                    'warehouse_note' => "Booking Order #{$order->order_number}",
-                    'final_status' => 'draft',
-                ]);
-            }
-
             \DB::commit();
 
             return response()->json([
@@ -99,7 +85,6 @@ class SalesOrderController extends Controller
                 'message' => 'Pesanan berhasil dibuat.',
                 'order_number' => $order->order_number
             ]);
-
         } catch (\Exception $e) {
             \DB::rollBack();
             return response()->json([

@@ -7,7 +7,6 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
-use App\Models\StockLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,7 +79,7 @@ class OrderController extends Controller
             $order = Order::create([
                 'customer_id' => $customer->id_customer,
                 'sales_id' => $request->sales_id,
-                'created_by' => $customer->id_customer,
+                'created_by' => auth()->id(),
                 'order_date' => now(),
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount,
@@ -95,17 +94,6 @@ class OrderController extends Controller
             foreach ($orderDetails as $detail) {
                 $detail['order_id'] = $order->id_order;
                 OrderDetail::create($detail);
-
-                StockLog::create([
-                    'product_id' => $detail['product_id'],
-                    'user_id' => auth()->user()->id_user,
-                    'verification_status' => 'pending',
-                    'quantity' => $detail['qty'],
-                    'reference' => $order->order_number,
-                    'type' => 'out',
-                    'warehouse_note' => "Booking Order #{$order->order_number}",
-                    'final_status' => 'draft',
-                ]);
             }
 
             DB::commit();

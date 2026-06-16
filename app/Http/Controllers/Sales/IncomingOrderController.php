@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Sales;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderDetail;
-use App\Models\StockLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -52,7 +51,7 @@ class IncomingOrderController extends Controller
             // Logic: Discount is per unit. Base price is product's purchase_price.
             $basePrice = $detail->product->purchase_price;
             $discountPerUnit = $request->discount;
-            
+
             $newPriceAtTime = $basePrice - $discountPerUnit;
             $newTotalItemPrice = $newPriceAtTime * $detail->qty;
 
@@ -65,13 +64,13 @@ class IncomingOrderController extends Controller
 
             // Recalculate Order totals
             $allDetails = OrderDetail::where('order_id', $order->id_order)->get();
-            
+
             // Subtotal is the sum of (price * qty) before discount? 
             // Or sum of (total_item_price)? 
             // Usually subtotal is before tax. Let's follow the previous PO logic:
             // Subtotal = sum(total_item_price)
             $newSubtotal = $allDetails->sum('total_item_price');
-            $newDiscountTotal = $allDetails->sum(function($d) {
+            $newDiscountTotal = $allDetails->sum(function ($d) {
                 return $d->discount * $d->qty;
             });
 
@@ -139,12 +138,6 @@ class IncomingOrderController extends Controller
                     $detail->product->increment('current_stock', $detail->qty);
                 }
             }
-
-            // Update StockLog reference status
-            StockLog::where('reference', $order->order_number)->update([
-                'verification_status' => 'tidak_sesuai',
-                'final_status' => 'completed',
-            ]);
 
             $order->status = 'rejected';
             $order->rejected_note = $request->rejected_note;

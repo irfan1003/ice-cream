@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('zones', function (Blueprint $table) {
-            $table->id('id_zone');
-            $table->string('zone_name');
+        Schema::create('suppliers', function (Blueprint $table) {
+            $table->bigIncrements('id_supplier');
+            $table->string('supplier_name');
+            $table->string('phone');
+            $table->string('email')->nullable();
+            $table->text('address')->nullable();
+            $table->string('pic_name')->nullable();
             $table->timestamps();
         });
     }
@@ -23,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('zones');
+        Schema::dropIfExists('suppliers');
     }
 };

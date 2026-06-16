@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\Order;
-use App\Models\StockLog;
 
 class KoorIncoOrderController extends Controller
 {
@@ -16,14 +15,14 @@ class KoorIncoOrderController extends Controller
             ->where('status', 'pending_coordinator')
             ->latest()
             ->get();
-            
+
         return view('koordinator-sales.incoming-order', compact('orders'));
     }
 
     public function show($id)
     {
         $order = Order::with(['customer', 'sales', 'orderDetail.product'])->findOrFail($id);
-        
+
         return response()->json($order);
     }
 
@@ -39,10 +38,10 @@ class KoorIncoOrderController extends Controller
     public function reject(Request $request, $id)
     {
         $order = Order::with(['orderDetail.product', 'orderByPelanggan'])->findOrFail($id);
-        
+
         // created_by is a user, let's check the role
         $creator = \App\Models\User::find($order->created_by);
-        
+
         if (!$creator) {
             return redirect()->back()->with('error', 'Pencipta pesanan tidak ditemukan.');
         }
@@ -67,12 +66,6 @@ class KoorIncoOrderController extends Controller
                         $detail->product->increment('current_stock', $detail->qty);
                     }
                 }
-
-                // Update StockLog reference status
-                StockLog::where('reference', $order->order_number)->update([
-                    'verification_status' => 'tidak_sesuai',
-                    'final_status' => 'completed',
-                ]);
 
                 $order->status = 'rejected';
                 $order->rejected_note = $request->rejected_note;

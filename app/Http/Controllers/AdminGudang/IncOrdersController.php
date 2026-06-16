@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class IncOrdersController extends Controller
 {
@@ -34,11 +36,7 @@ class IncOrdersController extends Controller
         $order = Order::with(['customer.zone', 'sales', 'orderDetail.product', 'delivery'])->findOrFail($id);
         $delivery = $order->delivery;
 
-        // Fetch signatures
-        $adminKantor = User::where('role', 'admin_kantor')->whereNotNull('signature')->first();
-        $adminGudang = User::where('role', 'admin_gudang')->whereNotNull('signature')->first();
-
-        return view('partials.surat-jalan', compact('order', 'delivery', 'adminKantor', 'adminGudang'));
+        return view('partials.surat-jalan', compact('order', 'delivery'));
     }
 
     public function getDrivers()
@@ -84,13 +82,17 @@ class IncOrdersController extends Controller
     public function markAsReady($id)
     {
         try {
+            DB::beginTransaction();
             $order = Order::with('delivery')->findOrFail($id);
             if ($order->delivery) {
                 $order->delivery->update([
                     'delivery_status' => 'ready',
-                    'acc_gudang' => true
+                    'acc_gudang' => true,
+                    'barcode_gudang' => Str::random(40)
                 ]);
             }
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -98,6 +100,7 @@ class IncOrdersController extends Controller
                 'redirect_url' => route('gudang.incorders.index')
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui status: ' . $e->getMessage()

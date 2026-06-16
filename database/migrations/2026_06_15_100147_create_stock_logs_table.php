@@ -4,20 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('stock_logs', function (Blueprint $table) {
-            $table->id('id_log');
-            $table->foreignId('product_id')->constrained('products', 'id_product');
-            $table->foreignId('user_id')->constrained('users', 'id_user')->onDelete('cascade');
+            $table->bigIncrements('id_log');
+            $table->unsignedBigInteger('product_id')->index('stock_logs_product_id_foreign');
+            $table->unsignedBigInteger('user_id')->index('stock_logs_user_id_foreign');
             $table->enum('type', ['in', 'out']);
             $table->integer('quantity');
-            $table->string('reference');
-            $table->text('description')->nullable();
+            $table->unsignedBigInteger('po_supplier_id')->nullable()->index('stock_logs_po_supplier_id_foreign');
+            $table->unsignedBigInteger('order_id')->nullable()->index('stock_logs_order_id_foreign');
+            $table->string('reference_note');
             $table->timestamps();
         });
     }

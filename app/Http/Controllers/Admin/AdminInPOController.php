@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ProductPOExport;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
-use App\Models\PurchaseOrders;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\PurchaseOrders;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ProductPOExport;
+
 
 class AdminInPOController extends Controller
 {
@@ -88,7 +89,7 @@ class AdminInPOController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
             $po = PurchaseOrders::with('details')->findOrFail($id);
 
             $subtotal = 0;
@@ -125,15 +126,14 @@ class AdminInPOController extends Controller
                 'status' => 'pending_director'
             ]);
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Detail Purchase Order berhasil diperbarui dan diteruskan ke Direktur.'
             ]);
-
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui PO: ' . $e->getMessage()
@@ -146,34 +146,19 @@ class AdminInPOController extends Controller
         $request->validate(['status' => 'required|string']);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
             $po = PurchaseOrders::with('details')->findOrFail($id);
-            $oldStatus = $po->status;
 
             $po->update(['status' => $request->status]);
 
-            if ($request->status === 'stock_arrived' && $oldStatus !== 'stock_arrived') {
-                foreach ($po->details as $detail) {
-                    \App\Models\StockLog::create([
-                        'product_id' => $detail->product_id,
-                        'user_id' => auth()->id(),
-                        'verification_status' => 'pending',
-                        'quantity' => $detail->qty + ($detail->bonus_qty ?? 0),
-                        'reference' => $po->po_number,
-                        'type' => 'in',
-                        'final_status' => 'draft'
-                    ]);
-                }
-            }
-
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Status PO berhasil diperbarui menjadi ' . str_replace('_', ' ', $request->status)
             ]);
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memperbarui status PO: ' . $e->getMessage()
@@ -184,7 +169,7 @@ class AdminInPOController extends Controller
     public function convert($id)
     {
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
             $po = PurchaseOrders::with('details')->findOrFail($id);
 
             // Create Order
@@ -222,15 +207,14 @@ class AdminInPOController extends Controller
             // Update PO Status
             $po->update(['status' => 'converted']);
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'PO berhasil dikonversi menjadi Pesanan Reguler.'
             ]);
-
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengkonversi PO: ' . $e->getMessage()

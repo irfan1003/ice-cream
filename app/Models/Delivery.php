@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 
 
-#[Fillable(['driver_id', 'order_id', 'spb_number', 'acc_kantor', 'acc_gudang', 'delivery_status'])]
+#[Fillable(['driver_id', 'order_id', 'spb_number', 'barcode_office', 'barcode_gudang', 'delivery_status'])]
 #[Table(key: 'id_deliver', incrementing: true)]
 class Delivery extends Model
 {

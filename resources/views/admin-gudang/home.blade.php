@@ -108,63 +108,11 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-sm">
-                            @forelse($stockLogs as $reference => $items)
-                                @php
-                                    $firstItem = $items->first();
-                                @endphp
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-6 py-4 text-slate-600">
-                                        {{ $firstItem->created_at->format('d M Y H:i') }}
-                                    </td>
-                                    <td class="px-6 py-4 font-bold text-slate-900">
-                                        {{ $reference }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if($firstItem->type === 'in')
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700">Masuk</span>
-                                        @else
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-100 text-rose-700">Keluar</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-right font-bold text-slate-900">
-                                        {{ $items->count() }} Produk
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @php
-                                            $logStatusConfig = [
-                                                'pending' => ['label' => 'Pending', 'class' => 'bg-amber-100 text-amber-700'],
-                                                'verified' => ['label' => 'Terverifikasi', 'class' => 'bg-emerald-100 text-emerald-700'],
-                                                'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-100 text-rose-700'],
-                                            ];
-                                            $logStatus = $logStatusConfig[$firstItem->verification_status] ?? ['label' => $firstItem->verification_status, 'class' => 'bg-slate-100 text-slate-700'];
-                                        @endphp
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $logStatus['class'] }}">
-                                            {{ $logStatus['label'] }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button onclick="showStockLogDetail('{{ $reference }}', {{ json_encode($items) }})" 
-                                                class="p-1.5 text-slate-400 hover:text-brand-pink hover:bg-brand-pink/10 rounded-lg transition-all"
-                                                title="Lihat Detail Stok">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                                        <div class="flex flex-col items-center gap-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                            </svg>
-                                            <p class="text-slate-400">Belum ada riwayat stok.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">
+                                    Data Riwayat Stok Dinonaktifkan Sementara (Proses Refactoring)
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

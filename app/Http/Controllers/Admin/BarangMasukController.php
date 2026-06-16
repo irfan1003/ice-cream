@@ -4,96 +4,102 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\SupplierPo;
+use App\Models\Product;
+use App\Models\StockLog;
+use Illuminate\Support\Facades\DB;
 
 class BarangMasukController extends Controller
 {
     public function index()
     {
-        $incomingGoods = \App\Models\StockLog::with('product')
-            ->where('type', 'in')
-            ->whereNot('final_status', 'completed')
-            ->get()
-            ->groupBy('reference');
+        $poSuppliers = SupplierPo::with(['supplier', 'details'])
+            ->where('status', 'pending_office')
+            ->orderBy('po_date', 'desc')
+            ->get();
 
-        return view('admin.barang-masuk', compact('incomingGoods'));
+        return view('admin.barang-masuk', compact('poSuppliers'));
     }
 
-    public function create()
+    public function show($id)
     {
-        return view('admin.add-barangmasuk');
+        $poSupplier = SupplierPo::with(['supplier', 'details.product'])->findOrFail($id);
+        return view('admin.barang-masuk-show', compact('poSupplier'));
     }
 
-    public function store(Request $request)
+    public function finalize($id)
     {
-        $request->validate([
-            'reference' => 'required|string|max:255',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id_product',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
+        try {
+            DB::transaction(function () use ($id) {
+                $po = SupplierPo::with('details')->findOrFail($id);
+                $po->update(['status' => 'verified']);
 
-        foreach ($request->items as $item) {
-            \App\Models\StockLog::create([
-                'product_id' => $item['product_id'],
-                'user_id' => auth()->id(),
-                'quantity' => $item['quantity'],
-                'reference' => $request->reference,
-                'type' => 'in',
-                'verification_status' => 'pending',
-                'final_status' => 'draft',
-            ]);
+                foreach ($po->details as $item) {
+                    $product = Product::findOrFail($item->product_id);
+                    $product->current_stock += $item->qty;
+                    $product->save();
+
+                    StockLog::create([
+                        'product_id' => $item->product_id,
+                        'user_id' => auth()->id(),
+                        'type' => 'in',
+                        'quantity' => $item->qty,
+                        'po_supplier_id' => $id,
+                        'order_id' => null,
+                        'reference_note' => 'Restock dari PO #' . $po->po_number
+                    ]);
+                }
+            });
+
+            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier berhasil diverifikasi dan stok berhasil diupdate!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memverifikasi PO Supplier: ' . $e->getMessage());
         }
-
-        return redirect()->route('admin.barang-masuk.index')->with('success', 'Barang masuk berhasil dicatat');
     }
 
-    public function edit($id)
+    public function sendBackToWarehouse($id)
     {
-        $log = \App\Models\StockLog::findOrFail($id);
-        $products = \App\Models\Product::all();
-        return view('admin.edit-barangmasuk', compact('log', 'products'));
+        try {
+            DB::transaction(function () use ($id) {
+                $po = SupplierPo::findOrFail($id);
+                $po->update(['status' => 'pending']);
+            });
+
+            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier dikirim kembali ke Gudang untuk verifikasi ulang!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengirim PO Supplier kembali ke Gudang: ' . $e->getMessage());
+        }
     }
 
-    public function update(Request $request, $id)
+    public function forceFinalizeWithDiscrepancy($id)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id_product',
-            'quantity' => 'required|integer|min:1',
-        ]);
+        try {
+            DB::transaction(function () use ($id) {
+                $po = SupplierPo::with('details')->findOrFail($id);
+                $po->update(['status' => 'verified']);
 
-        $log = \App\Models\StockLog::findOrFail($id);
-        $log->update([
-            'product_id' => $request->product_id,
-            'quantity' => $request->quantity,
-        ]);
+                foreach ($po->details as $item) {
+                    if ($item->is_compatible) {
+                        $product = Product::findOrFail($item->product_id);
+                        $product->current_stock += $item->qty;
+                        $product->save();
 
-        return redirect()->route('admin.barang-masuk.index')->with('success', 'Barang masuk berhasil diperbarui');
-    }
+                        StockLog::create([
+                            'product_id' => $item->product_id,
+                            'user_id' => auth()->id(),
+                            'type' => 'in',
+                            'quantity' => $item->qty,
+                            'po_supplier_id' => $id,
+                            'order_id' => null,
+                            'reference_note' => 'Restock PO #' . $po->po_number . ' (Penyesuaian Barang Kurang/Rusak)'
+                        ]);
+                    }
+                }
+            });
 
-    public function resetVerification($reference)
-    {
-        \App\Models\StockLog::where('reference', $reference)->update([
-            'verification_status' => 'pending'
-        ]);
-
-        return redirect()->route('admin.barang-masuk.index')->with('success', 'Barang masuk dikirim ke admin gudang untuk verifikasi ulang');
-    }
-
-    public function updateStock($reference)
-    {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($reference) {
-            $logs = \App\Models\StockLog::where('reference', $reference)
-                ->where('final_status', 'draft')
-                ->get();
-
-            foreach ($logs as $log) {
-                $log->update(['final_status' => 'completed']);
-
-                \App\Models\Product::where('id_product', $log->product_id)
-                    ->increment('current_stock', $log->quantity);
-            }
-        });
-
-        return redirect()->route('admin.barang-masuk.index')->with('success', 'Stok berhasil diperbarui dan status log telah diselesaikan');
+            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier berhasil diverifikasi dengan penyesuaian stok!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memverifikasi PO Supplier: ' . $e->getMessage());
+        }
     }
 }

@@ -21,13 +21,15 @@ class RekapPenjualanExport implements FromCollection, WithHeadings, WithMapping,
 
     public function collection()
     {
+        $startDate = $this->startDate;
+
         return OrderDetail::with(['order.customer', 'order.sales', 'order.delivery', 'product'])
-            ->whereHas('order', function ($query) {
-                $query->where('status', 'completed')
+            ->whereHas('order', function ($query) use ($startDate) {
+                $query->where('status', 'paid')
                     ->whereHas('delivery', function ($q) {
                         $q->where('delivery_status', 'delivered');
                     })
-                    ->where('created_at', '>=', $this->startDate);
+                    ->where('created_at', '>=', $startDate);
             })
             ->get();
     }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['customer_id', 'created_by', 'discount_total', 'grand_total', 'order_date', 'order_number', 'sales_id', 'subtotal', 'tax_amount', 'status', 'rejected_note', 'invoice_pdf', 'po_id'])]
+#[Fillable(['customer_id', 'created_by', 'discount_total', 'grand_total', 'order_date', 'order_number', 'sales_id', 'subtotal', 'tax_amount', 'status', 'rejected_note', 'invoice_pdf'])]
 #[Table(key: 'id_order')]
 class Order extends Model
 {

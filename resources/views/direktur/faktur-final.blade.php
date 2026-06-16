@@ -287,7 +287,8 @@
             <a href="{{ route('direktur.verification.orders') }}" class="back-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Kembali
             </a>
@@ -394,15 +395,14 @@
         <div class="sig-section">
             <div class="sig-block">
                 <div class="sig-label">Direktur,</div>
-                <div style="height: 60px; margin-bottom: 5px; text-align: center;">
-                    @if (isset($signature))
-                        <img src="{{ $signature }}" style="height: 70px; width: auto; margin-top: -20px;">
+                <div style="margin-bottom: 5px; text-align: center;">
+                    @if ($order->barcode_key)
+                        <div style="margin-top: 10px; margin-bottom: 5px;">
+                            {!! QrCode::size(90)->generate(url('/verify-order/' . $order->barcode_key)) !!}
+                        </div>
+                        <small style="color: #666; display: block;">Scan untuk Verifikasi Digital</small>
                     @endif
                 </div>
-                <div class="sig-line"></div>
-                <div class="sig-name">(
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    )</div>
             </div>
         </div>
     </div>
