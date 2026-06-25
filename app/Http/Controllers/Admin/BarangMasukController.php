@@ -36,14 +36,14 @@ class BarangMasukController extends Controller
 
                 foreach ($po->details as $item) {
                     $product = Product::findOrFail($item->product_id);
-                    $product->current_stock += $item->qty;
+                    $product->current_stock += $item->qty_received;
                     $product->save();
 
                     StockLog::create([
                         'product_id' => $item->product_id,
                         'user_id' => auth()->id(),
                         'type' => 'in',
-                        'quantity' => $item->qty,
+                        'quantity' => $item->qty_received,
                         'po_supplier_id' => $id,
                         'order_id' => null,
                         'reference_note' => 'Restock dari PO #' . $po->po_number
@@ -79,21 +79,19 @@ class BarangMasukController extends Controller
                 $po->update(['status' => 'verified']);
 
                 foreach ($po->details as $item) {
-                    if ($item->is_compatible) {
-                        $product = Product::findOrFail($item->product_id);
-                        $product->current_stock += $item->qty;
-                        $product->save();
+                    $product = Product::findOrFail($item->product_id);
+                    $product->current_stock += $item->qty_received;
+                    $product->save();
 
-                        StockLog::create([
-                            'product_id' => $item->product_id,
-                            'user_id' => auth()->id(),
-                            'type' => 'in',
-                            'quantity' => $item->qty,
-                            'po_supplier_id' => $id,
-                            'order_id' => null,
-                            'reference_note' => 'Restock PO #' . $po->po_number . ' (Penyesuaian Barang Kurang/Rusak)'
-                        ]);
-                    }
+                    StockLog::create([
+                        'product_id' => $item->product_id,
+                        'user_id' => auth()->id(),
+                        'type' => 'in',
+                        'quantity' => $item->qty_received,
+                        'po_supplier_id' => $id,
+                        'order_id' => null,
+                        'reference_note' => 'Restock PO #' . $po->po_number . ' (Penyesuaian Barang Kurang/Rusak)'
+                    ]);
                 }
             });
 

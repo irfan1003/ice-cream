@@ -44,7 +44,7 @@ class POSupplierController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $po = SupplierPo::findOrFail($id);
-                $po->update(['status' => 'rejected']);
+                $po->update(['status' => 'pending']);
             });
 
             return redirect()->route('direktur.po-supplier.index')->with('success', 'PO Supplier berhasil ditolak!');

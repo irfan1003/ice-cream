@@ -1,120 +1,181 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Laporan</h1>
-            <p class="text-slate-500 mt-1">Laporan pengiriman dan pemasaran.</p>
-        </div>
-        
-        <!-- Filter Form -->
-        <form action="{{ route('direktur.report.index') }}" method="GET" class="flex items-center gap-3">
-            <select name="period" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-brand-blue focus:border-brand-blue block p-2.5 shadow-sm">
-                <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}>Hari Ini</option>
-                <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>Minggu Ini</option>
-                <option value="month" {{ request('period', 'month') == 'month' ? 'selected' : '' }}>Bulan Ini</option>
-            </select>
-            <button type="submit" class="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors shadow-sm">
-                Filter
-            </button>
-        </form>
-    </div>
+    <div x-data="{
+        activeTab: 'stok',
+        startDate: '{{ $startDate->format('Y-m-d') }}',
+        endDate: '{{ $endDate->format('Y-m-d') }}'
+    }" class="space-y-6">
 
-    <!-- Main Content with Tabs -->
-    <div x-data="{ activeTab: 'pengiriman' }" class="space-y-6">
-        <!-- Tabs Navigation -->
-        <div class="flex border-b border-slate-200">
-            <button @click="activeTab = 'pengiriman'" 
-                :class="activeTab === 'pengiriman' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'"
-                class="px-6 py-3 text-sm font-bold border-b-2 transition-all duration-200">
-                Laporan Pengiriman
-            </button>
-            <button @click="activeTab = 'pemasaran'" 
-                :class="activeTab === 'pemasaran' ? 'border-brand-pink text-brand-pink' : 'border-transparent text-slate-500 hover:text-slate-700'"
-                class="px-6 py-3 text-sm font-bold border-b-2 transition-all duration-200">
-                Laporan Pemasaran
-            </button>
+        {{-- ===================== HEADER ===================== --}}
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Dashboard Laporan</h1>
+                <p class="text-sm text-slate-500 mt-1">Analisis stok, pengiriman, pemasaran, dan pelanggan.</p>
+            </div>
         </div>
 
-        <!-- Pengiriman Tab Content -->
-        <div x-show="activeTab === 'pengiriman'" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-white border border-slate-100 text-slate-400 shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
-                        <h2 class="text-base font-bold text-slate-900">Data Pengiriman</h2>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <a href="{{ route('direktur.report.export', ['type' => 'pengiriman', 'period' => request('period', 'month')]) }}" 
-                            class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[11px] font-bold hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Export Excel
-                        </a>
-                        <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 shadow-sm">
-                            {{ $deliveries->count() ?? 0 }} Data
-                        </span>
-                    </div>
+        {{-- ===================== FILTER GLOBAL ===================== --}}
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <form id="filterForm" action="{{ route('direktur.report.index') }}" method="GET"
+                class="flex flex-wrap items-end gap-4">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal Mulai</label>
+                    <input type="date" name="start_date" id="startDate" x-model="startDate"
+                        value="{{ $startDate->format('Y-m-d') }}"
+                        class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue">
                 </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal Selesai</label>
+                    <input type="date" name="end_date" id="endDate" x-model="endDate"
+                        value="{{ $endDate->format('Y-m-d') }}"
+                        class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue">
+                </div>
+                <input type="hidden" name="tab" x-bind:value="activeTab">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+                    </svg>
+                    Filter Data
+                </button>
+                <a href="{{ route('direktur.report.export', ['start_date' => $startDate->format('Y-m-d'), 'end_date' => $endDate->format('Y-m-d')]) }}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export Excel (Stok)
+                </a>
+            </form>
+        </div>
+
+        {{-- ===================== TABS NAV ===================== --}}
+        <div class="flex border-b border-slate-200 gap-1 overflow-x-auto">
+            @php
+                $tabs = [
+                    ['key' => 'stok', 'label' => 'Laporan Stok', 'color' => 'indigo'],
+                    ['key' => 'pengiriman', 'label' => 'Laporan Pengiriman', 'color' => 'sky'],
+                    ['key' => 'pemasaran', 'label' => 'Laporan Pemasaran', 'color' => 'pink'],
+                    ['key' => 'pelanggan', 'label' => 'Laporan Pelanggan', 'color' => 'amber'],
+                ];
+            @endphp
+            @foreach ($tabs as $tab)
+                <button @click="activeTab = '{{ $tab['key'] }}'"
+                    :class="activeTab === '{{ $tab['key'] }}'
+                        ?
+                        'border-slate-900 text-slate-900 bg-white' :
+                        'border-transparent text-slate-400 hover:text-slate-600'"
+                    class="px-5 py-3 text-sm font-bold border-b-2 transition-all duration-200 whitespace-nowrap -mb-px">
+                    {{ $tab['label'] }}
+                </button>
+            @endforeach
+        </div>
+
+        {{-- ===================== TAB 1: LAPORAN STOK ===================== --}}
+        <div x-show="activeTab === 'stok'" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900">Tabel Mutasi Stok</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Periode: {{ $startDate->format('d M Y') }} – {{ $endDate->format('d M Y') }}
+                        </p>
+                    </div>
+                    <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600">
+                        {{ $products->count() }} Produk
+                    </span>
+                </div>
+
+                {{-- Tabel Matriks Mutasi Stok --}}
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr class="bg-slate-50/30 text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-100">
-                                <th class="px-6 py-4 font-bold">No. Order</th>
-                                <th class="px-6 py-4 font-bold">Tanggal Kirim</th>
-                                <th class="px-6 py-4 font-bold">Pelanggan</th>
-                                <th class="px-6 py-4 font-bold">Alamat</th>
-                                <th class="px-6 py-4 font-bold text-center">Status</th>
-                                <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                            {{-- Header Row 1: Tanggal-tanggal --}}
+                            <tr class="bg-emerald-700 text-white">
+                                <th class="px-4 py-3 font-bold text-center align-middle border border-emerald-600 min-w-[160px]"
+                                    rowspan="2">NAMA ITEM</th>
+                                <th class="px-4 py-3 font-bold text-center align-middle border border-emerald-600 min-w-[70px]"
+                                    rowspan="2">STOK AWAL</th>
+                                @foreach ($dates as $date)
+                                    <th class="px-2 py-2 font-bold text-center border border-emerald-600 min-w-[120px]"
+                                        colspan="3">
+                                        {{ $date->format('d/m/Y') }}
+                                    </th>
+                                @endforeach
+                                <th class="px-3 py-3 font-bold text-center align-middle border border-emerald-600 min-w-[80px]"
+                                    rowspan="2">SUB<br>TOTAL ORD</th>
+                                <th class="px-3 py-3 font-bold text-center align-middle border border-emerald-600 min-w-[80px]"
+                                    rowspan="2">SUB<br>TOTAL BNS</th>
+                            </tr>
+                            {{-- Header Row 2: Sub-kolom ORD / BNS / DISC --}}
+                            <tr class="bg-emerald-600 text-white">
+                                @foreach ($dates as $date)
+                                    <th class="px-2 py-2 font-bold text-center border border-emerald-500">ORD</th>
+                                    <th class="px-2 py-2 font-bold text-center border border-emerald-500">BNS</th>
+                                    <th class="px-2 py-2 font-bold text-center border border-emerald-500">DISC</th>
+                                @endforeach
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                            @forelse ($deliveries ?? [] as $delivery)
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <span class="font-bold text-slate-900">#{{ $delivery->order->order_number ?? '-' }}</span>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            @forelse($products as $product)
+                                @php
+                                    $pid = $product->id_product;
+                                    $stokAwal = ($product->current_stock ?? 0) + ($soldAfterStart[$pid] ?? 0);
+                                    $totalOrd = 0;
+                                    $totalBns = 0;
+                                @endphp
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td
+                                        class="px-4 py-2.5 font-semibold text-slate-900 border-r border-slate-100 whitespace-nowrap">
+                                        {{ $product->product_name }}
+                                        @if ($product->brand)
+                                            <div class="text-[10px] text-slate-400 font-normal">{{ $product->brand }}</div>
+                                        @endif
                                     </td>
-                                    <td class="px-6 py-4">
-                                        {{ \Carbon\Carbon::parse($delivery->delivery_date ?? $delivery->created_at)->format('d M Y') }}
+                                    <td class="px-3 py-2.5 text-center font-bold text-slate-700 border-r border-slate-100">
+                                        {{ $stokAwal }}
                                     </td>
-                                    <td class="px-6 py-4 font-medium text-slate-900">
-                                        {{ $delivery->order->customer->customer_name ?? '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-xs">
-                                        {{ $delivery->order->customer->address ?? '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
+                                    @foreach ($dates as $date)
                                         @php
-                                            $statusConfig = [
-                                                'shipped' => ['label' => 'Dalam Pengiriman', 'class' => 'bg-indigo-50 text-indigo-600 border-indigo-100'],
-                                                'delivered' => ['label' => 'Terkirim', 'class' => 'bg-emerald-50 text-emerald-600 border-emerald-100'],
-                                            ];
-                                            $status = $statusConfig[$delivery->delivery_status] ?? ['label' => $delivery->delivery_status, 'class' => 'bg-slate-50 text-slate-600 border-slate-100'];
+                                            $dateKey = $date->format('Y-m-d');
+                                            $ord = $mutationData[$pid][$dateKey]['ord'] ?? 0;
+                                            $bns = $mutationData[$pid][$dateKey]['bns'] ?? 0;
+                                            $disc = $mutationData[$pid][$dateKey]['disc'] ?? 0;
+                                            $totalOrd += $ord;
+                                            $totalBns += $bns;
                                         @endphp
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border {{ $status['class'] }}">
-                                            {{ $status['label'] }}
-                                        </span>
+                                        <td
+                                            class="px-2 py-2.5 text-center {{ $ord > 0 ? 'font-semibold text-slate-900' : 'text-slate-300' }} border-l border-slate-100">
+                                            {{ $ord > 0 ? $ord : '' }}
+                                        </td>
+                                        <td
+                                            class="px-2 py-2.5 text-center {{ $bns > 0 ? 'font-semibold text-emerald-600' : 'text-slate-300' }} border-l border-dashed border-slate-100">
+                                            {{ $bns > 0 ? $bns : '' }}
+                                        </td>
+                                        <td
+                                            class="px-2 py-2.5 text-center {{ $disc > 0 ? 'font-semibold text-rose-500' : 'text-slate-300' }} border-l border-dashed border-slate-100">
+                                            {{ $disc > 0 ? number_format($disc, 0, ',', '.') : '' }}
+                                        </td>
+                                    @endforeach
+                                    <td
+                                        class="px-3 py-2.5 text-center font-bold text-slate-900 border-l border-slate-200 bg-slate-50">
+                                        {{ $totalOrd > 0 ? $totalOrd : '-' }}
                                     </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button onclick="showDeliveryDetail({{ json_encode($delivery) }})"
-                                            class="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-brand-blue hover:text-white transition-all shadow-sm"
-                                            title="Lihat Detail">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
+                                    <td
+                                        class="px-3 py-2.5 text-center font-bold text-emerald-600 border-l border-slate-200 bg-slate-50">
+                                        {{ $totalBns > 0 ? $totalBns : '-' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">
-                                        Tidak ada data pengiriman untuk periode ini.
+                                    <td colspan="100" class="px-6 py-12 text-center text-slate-400 italic">
+                                        Tidak ada data produk.
                                     </td>
                                 </tr>
                             @endforelse
@@ -124,69 +185,195 @@
             </div>
         </div>
 
-        <!-- Pemasaran Tab Content -->
-        <div x-show="activeTab === 'pemasaran'" style="display: none;" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-white border border-slate-100 text-slate-400 shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                        </div>
-                        <h2 class="text-base font-bold text-slate-900">Data Kinerja Pemasaran (Sales)</h2>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <a href="{{ route('direktur.report.export', ['type' => 'pemasaran', 'period' => request('period', 'month')]) }}" 
-                            class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[11px] font-bold hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Export Excel
-                        </a>
-                        <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 shadow-sm">
-                            {{ $salesReports->count() ?? 0 }} Sales
-                        </span>
-                    </div>
+        {{-- ===================== TAB 2: LAPORAN PENGIRIMAN ===================== --}}
+        <div x-show="activeTab === 'pengiriman'" style="display:none" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-900">Data Pengiriman</h2>
+                    <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600">
+                        {{ $deliveries->count() }} Data
+                    </span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse text-sm">
                         <thead>
-                            <tr class="bg-slate-50/30 text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-100">
-                                <th class="px-6 py-4 font-bold">Nama Sales</th>
-                                <th class="px-6 py-4 font-bold text-center">Total Pesanan</th>
-                                <th class="px-6 py-4 font-bold text-right">Total Pendapatan (Omzet)</th>
-                                <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">No. Order
+                                </th>
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal
+                                </th>
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Pelanggan
+                                </th>
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Driver</th>
+                                <th
+                                    class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                            @forelse ($salesReports ?? [] as $sales)
+                        <tbody class="divide-y divide-slate-100 text-slate-600">
+                            @forelse($deliveries as $delivery)
                                 <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-slate-900">{{ $sales->name }}</div>
-                                        <div class="text-[11px] text-slate-400 mt-0.5">{{ $sales->email }}</div>
+                                    <td class="px-5 py-3 font-bold text-slate-900">
+                                        {{ $delivery->order->order_number ?? '-' }}
                                     </td>
-                                    <td class="px-6 py-4 text-center font-medium text-slate-900">
+                                    <td class="px-5 py-3 text-slate-600">
+                                        {{ \Carbon\Carbon::parse($delivery->created_at)->format('d M Y') }}
+                                    </td>
+                                    <td class="px-5 py-3 font-medium text-slate-800">
+                                        {{ $delivery->order->customer->customer_name ?? '-' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-slate-600">
+                                        {{ $delivery->driver->name ?? '-' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-center">
+                                        @php
+                                            $stConfig = [
+                                                'shipped' => [
+                                                    'label' => 'Dalam Pengiriman',
+                                                    'class' => 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                                                ],
+                                                'delivered' => [
+                                                    'label' => 'Terkirim',
+                                                    'class' => 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                                ],
+                                            ];
+                                            $st = $stConfig[$delivery->delivery_status] ?? [
+                                                'label' => $delivery->delivery_status,
+                                                'class' => 'bg-slate-50 text-slate-600 border-slate-100',
+                                            ];
+                                        @endphp
+                                        <span
+                                            class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border {{ $st['class'] }}">
+                                            {{ $st['label'] }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center text-slate-400 italic">
+                                        Tidak ada data pengiriman pada periode ini.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- ===================== TAB 3: LAPORAN PEMASARAN ===================== --}}
+        <div x-show="activeTab === 'pemasaran'" style="display:none"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0">
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-900">Performa Sales & Omzet</h2>
+                    <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600">
+                        {{ count($salesReports) }} Sales
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Sales
+                                </th>
+                                <th
+                                    class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    Total Pesanan</th>
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                                    Total Omzet</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-600">
+                            @forelse($salesReports as $sales)
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="px-5 py-3">
+                                        <div class="font-bold text-slate-900">{{ $sales->name }}</div>
+                                        <div class="text-xs text-slate-400">{{ $sales->email }}</div>
+                                    </td>
+                                    <td class="px-5 py-3 text-center font-semibold text-slate-700">
                                         {{ $sales->total_orders }} Pesanan
                                     </td>
-                                    <td class="px-6 py-4 font-bold text-slate-900 text-right">
+                                    <td class="px-5 py-3 text-right font-bold text-slate-900">
                                         Rp {{ number_format($sales->total_revenue, 0, ',', '.') }}
                                     </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button onclick="showSalesDetail({{ json_encode($sales) }})"
-                                            class="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-brand-pink hover:text-white transition-all shadow-sm"
-                                            title="Lihat Detail">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="px-6 py-12 text-center text-slate-400 italic">
+                                        Tidak ada data pemasaran pada periode ini.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        @if (count($salesReports) > 0)
+                            <tfoot class="border-t-2 border-slate-200 bg-slate-50">
+                                <tr class="font-bold text-slate-900">
+                                    <td class="px-5 py-3 text-xs uppercase tracking-wider">TOTAL</td>
+                                    <td class="px-5 py-3 text-center">{{ collect($salesReports)->sum('total_orders') }}
+                                        Pesanan</td>
+                                    <td class="px-5 py-3 text-right text-brand-pink-dark">
+                                        Rp {{ number_format(collect($salesReports)->sum('total_revenue'), 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- ===================== TAB 4: LAPORAN PELANGGAN ===================== --}}
+        <div x-show="activeTab === 'pelanggan'" style="display:none"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0">
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-900">Data Pembelian Pelanggan</h2>
+                    <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600">
+                        {{ $customers->count() }} Pelanggan Aktif
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Pelanggan
+                                </th>
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat</th>
+                                <th
+                                    class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    Jumlah Order</th>
+                                <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                                    Total Pembelian</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-600">
+                            @forelse($customers as $customer)
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="px-5 py-3">
+                                        <div class="font-bold text-slate-900">{{ $customer->customer_name }}</div>
+                                        <div class="text-xs text-slate-400">{{ $customer->phone ?? '-' }}</div>
+                                    </td>
+                                    <td class="px-5 py-3 text-xs text-slate-500">
+                                        {{ $customer->address ?? '-' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-center font-semibold text-slate-700">
+                                        {{ $customer->order_count }}
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-bold text-slate-900">
+                                        Rp {{ number_format($customer->total_spending, 0, ',', '.') }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="4" class="px-6 py-12 text-center text-slate-400 italic">
-                                        Tidak ada data pemasaran untuk periode ini.
+                                        Tidak ada data pelanggan yang bertransaksi pada periode ini.
                                     </td>
                                 </tr>
                             @endforelse
@@ -195,196 +382,24 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Delivery Detail Modal -->
-    <div id="deliveryDetailModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeDeliveryModal()"></div>
-            <div class="relative bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl transition-all border border-slate-100">
-                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900" id="modalDeliveryOrderNumber">Detail Pengiriman</h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5" id="modalDeliveryDate"></p>
-                    </div>
-                    <button onclick="closeDeliveryModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                    <div class="grid grid-cols-2 gap-8">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Data Pelanggan</p>
-                            <p class="text-sm font-bold text-slate-900" id="modalDeliveryCustomerName"></p>
-                            <p class="text-[11px] text-slate-500 mt-1" id="modalDeliveryAddress"></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Driver</p>
-                            <p class="text-sm font-bold text-slate-900" id="modalDeliveryDriverName"></p>
-                            <span id="modalDeliveryStatusBadge" class="mt-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border inline-block"></span>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rincian Item</p>
-                        <div class="border border-slate-100 rounded-xl overflow-hidden">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead class="bg-slate-50/50 border-b border-slate-100">
-                                    <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                        <th class="px-4 py-3">Produk</th>
-                                        <th class="px-4 py-3 text-center">Qty</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="modalDeliveryItems" class="divide-y divide-slate-50 text-slate-700"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
+@endsection
 
-    <!-- Sales Detail Modal -->
-    <div id="salesDetailModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeSalesModal()"></div>
-            <div class="relative bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl transition-all border border-slate-100">
-                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900" id="modalSalesNameTitle">Detail Pemasaran</h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5" id="modalSalesEmail"></p>
-                    </div>
-                    <button onclick="closeSalesModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                    <div class="grid grid-cols-2 gap-8">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Pesanan</p>
-                            <p class="text-sm font-bold text-slate-900" id="modalSalesTotalOrders"></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Omzet</p>
-                            <p class="text-sm font-bold text-brand-pink" id="modalSalesTotalRevenue"></p>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daftar Pesanan</p>
-                        <div class="border border-slate-100 rounded-xl overflow-hidden">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead class="bg-slate-50/50 border-b border-slate-100">
-                                    <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                        <th class="px-4 py-3">No. Order</th>
-                                        <th class="px-4 py-3">Pelanggan</th>
-                                        <th class="px-4 py-3">Tanggal</th>
-                                        <th class="px-4 py-3 text-right">Nilai Pesanan</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="modalSalesItems" class="divide-y divide-slate-50 text-slate-700"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @push('scripts')
+@push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        function showDeliveryDetail(delivery) {
-            const modal = document.getElementById('deliveryDetailModal');
-            
-            const orderNumber = delivery.order?.order_number || '-';
-            const customerName = delivery.order?.customer?.customer_name || '-';
-            const address = delivery.order?.customer?.address || '-';
-            const driverName = delivery.driver?.name || '-';
-            
-            document.getElementById('modalDeliveryOrderNumber').innerText = `Pengiriman Order #${orderNumber}`;
-            document.getElementById('modalDeliveryDate').innerText = new Date(delivery.delivery_date || delivery.created_at).toLocaleDateString('id-ID', {
-                day: 'numeric', month: 'long', year: 'numeric'
-            });
-            document.getElementById('modalDeliveryCustomerName').innerText = customerName;
-            document.getElementById('modalDeliveryAddress').innerText = address;
-            document.getElementById('modalDeliveryDriverName').innerText = driverName;
-            
-            const badge = document.getElementById('modalDeliveryStatusBadge');
-            if (delivery.delivery_status === 'shipped') {
-                badge.className = 'mt-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border inline-block bg-indigo-50 text-indigo-600 border-indigo-100';
-                badge.innerText = 'Dalam Pengiriman';
-            } else if (delivery.delivery_status === 'delivered') {
-                badge.className = 'mt-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border inline-block bg-emerald-50 text-emerald-600 border-emerald-100';
-                badge.innerText = 'Terkirim';
-            } else {
-                badge.className = 'mt-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border inline-block bg-slate-50 text-slate-600 border-slate-100';
-                badge.innerText = delivery.delivery_status || 'N/A';
+        // Sinkronisasi tab aktif dari URL param (agar setelah filter, tab tetap sama)
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab');
+            if (activeTab) {
+                // Alpine.js sudah handle via x-data, tapi kita set ulang via event
+                const el = document.querySelector('[x-data]');
+                if (el && el._x_dataStack) {
+                    el._x_dataStack[0].activeTab = activeTab;
+                }
             }
-
-            let itemsHtml = '';
-            if (delivery.order && delivery.order.order_detail && delivery.order.order_detail.length > 0) {
-                delivery.order.order_detail.forEach(item => {
-                    itemsHtml += `
-                        <tr class="hover:bg-slate-50/30">
-                            <td class="px-4 py-3">
-                                <div class="font-bold text-slate-900">${item.product?.product_name || 'N/A'}</div>
-                            </td>
-                            <td class="px-4 py-3 text-center font-medium">${item.qty}</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                itemsHtml = `<tr><td colspan="2" class="px-4 py-4 text-center text-slate-400 italic">Tidak ada detail item</td></tr>`;
-            }
-            
-            document.getElementById('modalDeliveryItems').innerHTML = itemsHtml;
-            
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeDeliveryModal() {
-            document.getElementById('deliveryDetailModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        function showSalesDetail(sales) {
-            const modal = document.getElementById('salesDetailModal');
-            
-            document.getElementById('modalSalesNameTitle').innerText = sales.name;
-            document.getElementById('modalSalesEmail').innerText = sales.email;
-            document.getElementById('modalSalesTotalOrders').innerText = `${sales.total_orders} Pesanan`;
-            document.getElementById('modalSalesTotalRevenue').innerText = `Rp ${new Intl.NumberFormat('id-ID').format(sales.total_revenue)}`;
-
-            let itemsHtml = '';
-            if (sales.orders && sales.orders.length > 0) {
-                sales.orders.forEach(order => {
-                    itemsHtml += `
-                        <tr class="hover:bg-slate-50/30">
-                            <td class="px-4 py-3 font-bold text-slate-900">#${order.order_number}</td>
-                            <td class="px-4 py-3">${order.customer?.customer_name || '-'}</td>
-                            <td class="px-4 py-3 text-slate-500">${new Date(order.order_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}</td>
-                            <td class="px-4 py-3 text-right font-medium text-slate-900">Rp ${new Intl.NumberFormat('id-ID').format(order.grand_total)}</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                itemsHtml = `<tr><td colspan="4" class="px-4 py-4 text-center text-slate-400 italic">Tidak ada pesanan tercatat</td></tr>`;
-            }
-            
-            document.getElementById('modalSalesItems').innerHTML = itemsHtml;
-            
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeSalesModal() {
-            document.getElementById('salesDetailModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
+        });
     </script>
-    @endpush
-@endsection
+@endpush

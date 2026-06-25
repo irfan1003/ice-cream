@@ -79,17 +79,70 @@ class IncOrdersController extends Controller
         }
     }
 
+    public function updateDeliveryDate(Request $request, $id)
+    {
+        $request->validate([
+            'delivery_date' => 'required|date',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $delivery = \App\Models\Delivery::findOrFail($id);
+            $delivery->update([
+                'delivery_date' => $request->input('delivery_date'),
+                'delivery_status' => 'pending_admin_kantor' 
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tanggal pengiriman berhasil diperbarui.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui tanggal: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function markAsReady($id)
     {
         try {
             DB::beginTransaction();
-            $order = Order::with('delivery')->findOrFail($id);
+            
+            $order = Order::with(['delivery', 'orderDetail.product'])->findOrFail($id);
+            
             if ($order->delivery) {
+                // Update delivery status
                 $order->delivery->update([
                     'delivery_status' => 'ready',
                     'acc_gudang' => true,
                     'barcode_gudang' => Str::random(40)
                 ]);
+
+                // Process stock deduction and create stock logs
+                foreach ($order->orderDetail as $detail) {
+                    $product = $detail->product;
+                    
+                    if ($product) {
+                        // Calculate total quantity (order qty + bonus qty)
+                        $totalQty = $detail->qty + ($detail->bonus_qty ?? 0);
+                        
+                        // Create stock log
+                        \App\Models\StockLog::create([
+                            'product_id' => $product->id_product,
+                            'user_id' => auth()->id(),
+                            'quantity' => $totalQty, // Negative for outgoing stock
+                            'type' => 'out',
+                            'reference_note' => "Pengiriman untuk Order #{$order->order_number} - SPB: {$order->delivery->spb_number}",
+                            'order_id' => $order->id_order,
+                        ]);
+                    }
+                }
             }
 
             DB::commit();

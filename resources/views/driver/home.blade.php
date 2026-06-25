@@ -40,7 +40,7 @@
                                         $statusConfig = [
                                             'ready' => ['label' => 'Siap Kirim', 'class' => 'bg-indigo-100 text-indigo-700'],
                                             'shipped' => ['label' => 'Dalam Perjalanan', 'class' => 'bg-amber-100 text-amber-700'],
-                                            'completed' => ['label' => 'Diterima', 'class' => 'bg-emerald-100 text-emerald-700'],
+                                            'delivered' => ['label' => 'Diterima', 'class' => 'bg-emerald-100 text-emerald-700'],
                                         ];
                                         $status = $statusConfig[$delivery->delivery_status] ?? ['label' => $delivery->delivery_status, 'class' => 'bg-slate-100 text-slate-700'];
                                     @endphp

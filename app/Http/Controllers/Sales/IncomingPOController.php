@@ -99,6 +99,40 @@ class IncomingPOController extends Controller
         return redirect()->route('sales.incomingpo.index')->with('success', 'Purchase Order verified and forwarded to coordinator.');
     }
 
+    public function kirimKolektif(Request $request)
+    {
+        // Validasi: pastikan ada order_ids yang dipilih
+        if (!$request->has('order_ids') || empty($request->order_ids)) {
+            return redirect()->back()->with('error', 'Silakan pilih minimal satu PO untuk dikirim.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $orderIds = $request->order_ids;
+            
+            // Batch update status dari 'pending_sales' ke 'pending_coordinator'
+            $updated = PurchaseOrders::whereIn('id_po', $orderIds)
+                ->where('status', 'pending_sales')
+                ->update(['status' => 'pending_coordinator']);
+
+            DB::commit();
+
+            if ($updated > 0) {
+                return redirect()->route('sales.incomingpo.index')
+                    ->with('success', "{$updated} Purchase Order berhasil dikirim ke Koordinator.");
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Tidak ada PO yang dapat diproses. Pastikan status PO adalah pending_sales.');
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
     public function reject(Request $request, $id)
     {
         $request->validate(['rejected_note' => 'required|string']);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\PurcaheOrderDetail;
 use App\Models\PurchaseOrders;
@@ -48,6 +49,11 @@ class HomeController extends Controller
             ->where('status', 'paid')
             ->latest()->get();
 
+        $revisedOrders = Order::with(['customer', 'sales', 'orderDetail.product'])
+            ->where('status', 'revised')
+            ->latest()
+            ->get();
+
         // Purchase Orders: only approved & revised shown on dashboard
         $purchaseOrders = PurchaseOrders::with(['customer', 'sales', 'details.product'])
             ->whereIn('status', ['approved', 'revised'])
@@ -62,6 +68,7 @@ class HomeController extends Controller
             'shippedOrders',
             'deliveredOrders',
             'paidOrders',
+            'revisedOrders',
             'purchaseOrders'
         ));
     }
@@ -182,6 +189,101 @@ class HomeController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengirim ulang PO: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateRevisedOrder(Request $request, $id)
+    {
+        $request->validate([
+            'items'             => 'required|array',
+            'items.*.id'        => 'required|exists:order_details,id_order_detail',
+            'items.*.qty'       => 'required|integer|min:1',
+            'items.*.bonus_qty' => 'nullable|integer|min:0',
+            'items.*.discount'  => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $order = Order::with('orderDetail')->findOrFail($id);
+
+            if ($order->status !== 'revised') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya order dengan status "revised" yang dapat diedit.'
+                ], 422);
+            }
+
+            $subtotal      = 0;
+            $totalDiscount = 0;
+
+            foreach ($request->items as $itemData) {
+                $detail          = OrderDetail::findOrFail($itemData['id']);
+                $qty             = $itemData['qty'];
+                $bonusQty        = $itemData['bonus_qty'] ?? 0;
+                $discountPerItem = $itemData['discount'] ?? 0;
+                $priceAtTime     = $detail->price_at_time;
+                $itemTotal       = ($priceAtTime - $discountPerItem) * $qty;
+
+                $detail->update([
+                    'qty'              => $qty,
+                    'bonus_qty'        => $bonusQty,
+                    'discount'         => $discountPerItem,
+                    'total_item_price' => $itemTotal,
+                ]);
+
+                $subtotal      += $priceAtTime * $qty;
+                $totalDiscount += $discountPerItem * $qty;
+            }
+
+            $tax        = ($subtotal - $totalDiscount) * 0.11;
+            $grandTotal = ($subtotal - $totalDiscount) + $tax;
+
+            $order->update([
+                'subtotal'       => $subtotal,
+                'discount_total' => $totalDiscount,
+                'tax_amount'     => $tax,
+                'grand_total'    => $grandTotal,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail order berhasil diperbarui.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function resubmitOrderToDirector($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+
+            if ($order->status !== 'revised') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya order dengan status "revised" yang dapat dikirim ulang.'
+                ], 422);
+            }
+
+            $order->update(['status' => 'pending_director']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order berhasil dikirim ulang ke Direktur untuk persetujuan.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim ulang order: ' . $e->getMessage()
             ], 500);
         }
     }

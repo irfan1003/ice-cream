@@ -63,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin_kantor'])->group(function () {
         Route::get('/', [HomeController::class, 'index'])->name('admin.home');
         Route::post('/admin/orders/{id}/mark-as-paid', [HomeController::class, 'markAsPaid'])->name('admin.orders.mark-as-paid');
+        Route::post('/admin/orders/{id}/update-revised', [HomeController::class, 'updateRevisedOrder'])->name('admin.orders.update-revised');
+        Route::post('/admin/orders/{id}/resubmit', [HomeController::class, 'resubmitOrderToDirector'])->name('admin.orders.resubmit');
         Route::post('/admin/purchase-orders/{id}/update-revised', [HomeController::class, 'updateRevisedPO'])->name('admin.po.update-revised');
         Route::post('/admin/purchase-orders/{id}/resubmit', [HomeController::class, 'resubmitPO'])->name('admin.po.resubmit');
         Route::get('/admin/products', [ProductController::class, 'index'])->name('products.index');
@@ -116,6 +118,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/deliveries', [AdminDeliveryController::class, 'index'])->name('admin.deliveries.index');
         Route::get('/admin/deliveries/{id}/surat-jalan', [AdminDeliveryController::class, 'previewSuratJalan'])->name('admin.deliveries.surat-jalan');
         Route::post('/admin/deliveries/{id}/to-gudang', [AdminDeliveryController::class, 'updateStatusToGudang'])->name('admin.deliveries.to-gudang');
+        Route::post('/admin/deliveries/{id}/reject', [AdminDeliveryController::class, 'rejectSuratJalan'])->name('admin.deliveries.reject');
         Route::get('/admin/profile', [AdminProfileController::class, 'index'])->name('admin.profile.index');
         Route::post('/admin/profile/update-signature', [AdminProfileController::class, 'updateSignature'])->name('admin.profile.update-signature');
         Route::get('/admin/rekap-penjualan', [RekapPenjualanController::class, 'index'])->name('admin.rekap-penjualan.index');
@@ -130,89 +133,100 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/po-supplier/{po_supplier}/export', [PoSupplierController::class, 'export'])->name('admin.po-supplier.export');
     });
     // admin gudang
-    Route::prefix('admin-gudang')->group(function () {
-        Route::get('/', [AdminGudangHomeController::class, 'index'])->name('gudang.home');
-        Route::get('/stock', [\App\Http\Controllers\AdminGudang\StockController::class, 'index'])->name('gudang.stock.index');
-        Route::get('/stock/{id}/logs', [\App\Http\Controllers\AdminGudang\StockController::class, 'showLogDetail'])->name('gudang.stock.logs');
-        Route::post('/stock/{id}/adjustment', [\App\Http\Controllers\AdminGudang\StockController::class, 'adjustment'])->name('gudang.stock.adjustment');
-        Route::get('/verifikasi-stock', [VerifikasiStockController::class, 'index'])->name('gudang.verifikasi.index');
-        Route::post('/verifikasi-stock/{id}/terima', [VerifikasiStockController::class, 'terimaBarang'])->name('gudang.verifikasi.terima');
-        Route::get('/verifikasi-stock/{id}', [VerifikasiStockController::class, 'showVerifikasi'])->name('gudang.verifikasi.show');
-        Route::post('/verifikasi-stock/{id}', [VerifikasiStockController::class, 'storeVerifikasi'])->name('gudang.verifikasi.store');
-        Route::get('/inc-orders', [IncOrdersController::class, 'index'])->name('gudang.incorders.index');
-        Route::get('/inc-orders/{id}/surat-jalan', [IncOrdersController::class, 'previewSuratJalan'])->name('gudang.incorders.surat-jalan');
-        Route::get('/inc-orders/drivers', [IncOrdersController::class, 'getDrivers'])->name('gudang.incorders.drivers');
-        Route::post('/inc-orders/{id}/process-delivery', [IncOrdersController::class, 'processToDelivery'])->name('gudang.incorders.process-delivery');
-        Route::post('/inc-orders/{id}/ready', [IncOrdersController::class, 'markAsReady'])->name('gudang.incorders.ready');
-        Route::get('/stock-logs', [\App\Http\Controllers\AdminGudang\StockLogController::class, 'index'])->name('gudang.stock-logs.index');
-        Route::get('/profile', [ProfileGudangController::class, 'index'])->name('gudang.profile.index');
-        Route::post('/profile/update-signature', [ProfileGudangController::class, 'updateSignature'])->name('gudang.profile.update-signature');
+    Route::middleware('role:admin_gudang')->group(function () {
+        Route::prefix('admin-gudang')->group(function () {
+            Route::get('/', [AdminGudangHomeController::class, 'index'])->name('gudang.home');
+            Route::get('/stock', [\App\Http\Controllers\AdminGudang\StockController::class, 'index'])->name('gudang.stock.index');
+            Route::get('/stock/{id}/logs', [\App\Http\Controllers\AdminGudang\StockController::class, 'showLogDetail'])->name('gudang.stock.logs');
+            Route::post('/stock/{id}/adjustment', [\App\Http\Controllers\AdminGudang\StockController::class, 'adjustment'])->name('gudang.stock.adjustment');
+            Route::get('/verifikasi-stock', [VerifikasiStockController::class, 'index'])->name('gudang.verifikasi.index');
+            Route::post('/verifikasi-stock/{id}/terima', [VerifikasiStockController::class, 'terimaBarang'])->name('gudang.verifikasi.terima');
+            Route::get('/verifikasi-stock/{id}', [VerifikasiStockController::class, 'showVerifikasi'])->name('gudang.verifikasi.show');
+            Route::post('/verifikasi-stock/{id}', [VerifikasiStockController::class, 'storeVerifikasi'])->name('gudang.verifikasi.store');
+            Route::get('/inc-orders', [IncOrdersController::class, 'index'])->name('gudang.incorders.index');
+            Route::get('/inc-orders/{id}/surat-jalan', [IncOrdersController::class, 'previewSuratJalan'])->name('gudang.incorders.surat-jalan');
+            Route::get('/inc-orders/drivers', [IncOrdersController::class, 'getDrivers'])->name('gudang.incorders.drivers');
+            Route::post('/inc-orders/{id}/process-delivery', [IncOrdersController::class, 'processToDelivery'])->name('gudang.incorders.process-delivery');
+            Route::post('/inc-orders/{id}/ready', [IncOrdersController::class, 'markAsReady'])->name('gudang.incorders.ready');
+            Route::post('/inc-orders/{id}/update-delivery-date', [IncOrdersController::class, 'updateDeliveryDate'])->name('gudang.incorders.update-delivery-date');
+            Route::get('/stock-logs', [\App\Http\Controllers\AdminGudang\StockLogController::class, 'index'])->name('gudang.stock-logs.index');
+            Route::get('/profile', [ProfileGudangController::class, 'index'])->name('gudang.profile.index');
+            Route::post('/profile/update-signature', [ProfileGudangController::class, 'updateSignature'])->name('gudang.profile.update-signature');
+        });
     });
 
     // pelanggan
-    Route::prefix('customers')->group(function () {
-        Route::get('/', [CustomerHomeController::class, 'index'])->name('customers.home');
-        Route::get('/orders', [OrderController::class, 'index'])->name('customers.order.index');
-        Route::post('/orders', [OrderController::class, 'store'])->name('customers.order.store');
-        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('customers.purchase-order.index');
-        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('customers.purchase-order.store');
-        Route::get('/products', [\App\Http\Controllers\Customer\ProductController::class, 'index'])->name('customers.products.index');
+    Route::middleware('role:pelanggan')->group(function () {
+        Route::prefix('customers')->group(function () {
+            Route::get('/', [CustomerHomeController::class, 'index'])->name('customers.home');
+            Route::get('/orders', [OrderController::class, 'index'])->name('customers.order.index');
+            Route::post('/orders', [OrderController::class, 'store'])->name('customers.order.store');
+            Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('customers.purchase-order.index');
+            Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('customers.purchase-order.store');
+            Route::get('/products', [\App\Http\Controllers\Customer\ProductController::class, 'index'])->name('customers.products.index');
+        });
     });
     //sales
-    Route::get('/sales', [SalesHomeController::class, 'index'])->name('sales.home');
-    Route::get('/sales/incoming-orders', [IncomingOrderController::class, 'index'])->name('sales.incomingorders.index');
-    Route::get('/sales/incoming-orders/{id}', [IncomingOrderController::class, 'show'])->name('sales.incomingorders.show');
-    Route::put('/sales/incoming-orders/item/{id}', [IncomingOrderController::class, 'updateItem'])->name('sales.incomingorders.update-item');
-    Route::post('/sales/incoming-orders/{id}/verify', [IncomingOrderController::class, 'verify'])->name('sales.incomingorders.verify');
-    Route::post('/sales/incoming-orders/{id}/reject', [IncomingOrderController::class, 'reject'])->name('sales.incomingorders.reject');
-    Route::get('/sales/incoming-po', [IncomingPOController::class, 'index'])->name('sales.incomingpo.index');
-    Route::get('/sales/incoming-po/{id}', [IncomingPOController::class, 'show'])->name('sales.incomingpo.show');
-    Route::post('/sales/incoming-po/item/{id}/update', [IncomingPOController::class, 'updateItem'])->name('sales.incomingpo.item.update');
-    Route::post('/sales/incoming-po/{id}/verify', [IncomingPOController::class, 'verify'])->name('sales.incomingpo.verify');
-    Route::post('/sales/incoming-po/{id}/reject', [IncomingPOController::class, 'reject'])->name('sales.incomingpo.reject');
-    Route::get('/sales/products', [SalesProductController::class, 'index'])->name('sales.products.index');
-    Route::get('/sales/order', [SalesOrderController::class, 'index'])->name('sales.order.index');
-    Route::post('/sales/order', [SalesOrderController::class, 'store'])->name('sales.order.store');
-    Route::get('/sales/purchase-order', [SalesPOController::class, 'index'])->name('sales.purchase-order.index');
-    Route::post('/sales/purchase-order', [SalesPOController::class, 'store'])->name('sales.purchase-order.store');
-
+    Route::middleware('role:sales')->group(function () {
+        Route::get('/sales', [SalesHomeController::class, 'index'])->name('sales.home');
+        Route::get('/sales/incoming-orders', [IncomingOrderController::class, 'index'])->name('sales.incomingorders.index');
+        Route::get('/sales/incoming-orders/{id}', [IncomingOrderController::class, 'show'])->name('sales.incomingorders.show');
+        Route::put('/sales/incoming-orders/item/{id}', [IncomingOrderController::class, 'updateItem'])->name('sales.incomingorders.update-item');
+        Route::post('/sales/incoming-orders/{id}/verify', [IncomingOrderController::class, 'verify'])->name('sales.incomingorders.verify');
+        Route::post('/sales/incoming-orders/{id}/reject', [IncomingOrderController::class, 'reject'])->name('sales.incomingorders.reject');
+        Route::get('/sales/incoming-po', [IncomingPOController::class, 'index'])->name('sales.incomingpo.index');
+        Route::get('/sales/incoming-po/{id}', [IncomingPOController::class, 'show'])->name('sales.incomingpo.show');
+        Route::post('/sales/incoming-po/item/{id}/update', [IncomingPOController::class, 'updateItem'])->name('sales.incomingpo.item.update');
+        Route::post('/sales/incoming-po/{id}/verify', [IncomingPOController::class, 'verify'])->name('sales.incomingpo.verify');
+        Route::post('/sales/incoming-po/{id}/reject', [IncomingPOController::class, 'reject'])->name('sales.incomingpo.reject');
+        Route::post('/sales/incoming-po/kirim-kolektif', [IncomingPOController::class, 'kirimKolektif'])->name('sales.incomingpo.kirimKolektif');
+        Route::get('/sales/products', [SalesProductController::class, 'index'])->name('sales.products.index');
+        Route::get('/sales/order', [SalesOrderController::class, 'index'])->name('sales.order.index');
+        Route::post('/sales/order', [SalesOrderController::class, 'store'])->name('sales.order.store');
+        Route::get('/sales/purchase-order', [SalesPOController::class, 'index'])->name('sales.purchase-order.index');
+        Route::post('/sales/purchase-order', [SalesPOController::class, 'store'])->name('sales.purchase-order.store');
+    });
     //koor sales
-    Route::get('/koor-sales/home', [KoorHomeController::class, 'index'])->name('koor.sales.home');
-    Route::get('/koor-sales/pesanan-masuk', [KoorIncoOrderController::class, 'index'])->name('koor.orders.index');
-    Route::get('/koor-sales/pesanan-masuk/{id}', [KoorIncoOrderController::class, 'show'])->name('koor.orders.show');
-    Route::post('/koor-sales/pesanan-masuk/{id}/verify', [KoorIncoOrderController::class, 'verify'])->name('koor.orders.verify');
-    Route::post('/koor-sales/pesanan-masuk/{id}/reject', [KoorIncoOrderController::class, 'reject'])->name('koor.orders.reject');
-    Route::get('/koor-sales/po-masuk', [KoorIncoPOController::class, 'index'])->name('koor.po.index');
-    Route::get('/koor-sales/po-masuk/{id}', [KoorIncoPOController::class, 'show'])->name('koor.po.show');
-    Route::post('/koor-sales/po-masuk/{id}/verify', [KoorIncoPOController::class, 'verify'])->name('koor.po.verify');
-    Route::post('/koor-sales/po-masuk/{id}/reject', [KoorIncoPOController::class, 'reject'])->name('koor.po.reject');
-    Route::get('/koor-sales/katalog-produk', [KoorProductController::class, 'index'])->name('koor.products.index');
-
+    Route::middleware('role:koordinator_sales')->group(function () {
+        Route::get('/koor-sales/home', [KoorHomeController::class, 'index'])->name('koor.sales.home');
+        Route::get('/koor-sales/pesanan-masuk', [KoorIncoOrderController::class, 'index'])->name('koor.orders.index');
+        Route::get('/koor-sales/pesanan-masuk/{id}', [KoorIncoOrderController::class, 'show'])->name('koor.orders.show');
+        Route::post('/koor-sales/pesanan-masuk/{id}/verify', [KoorIncoOrderController::class, 'verify'])->name('koor.orders.verify');
+        Route::post('/koor-sales/pesanan-masuk/{id}/reject', [KoorIncoOrderController::class, 'reject'])->name('koor.orders.reject');
+        Route::get('/koor-sales/po-masuk', [KoorIncoPOController::class, 'index'])->name('koor.po.index');
+        Route::get('/koor-sales/po-masuk/{id}', [KoorIncoPOController::class, 'show'])->name('koor.po.show');
+        Route::post('/koor-sales/po-masuk/{id}/verify', [KoorIncoPOController::class, 'verify'])->name('koor.po.verify');
+        Route::post('/koor-sales/po-masuk/{id}/reject', [KoorIncoPOController::class, 'reject'])->name('koor.po.reject');
+        Route::get('/koor-sales/katalog-produk', [KoorProductController::class, 'index'])->name('koor.products.index');
+    });
     Route::prefix('direktur')->group(function () {
-        Route::get('/home', [DirekturHomeController::class, 'index'])->name('direktur.home');
-        Route::get('/verification-orders', [VerificationOrderController::class, 'index'])->name('direktur.verification.orders');
-        Route::post('/verification-orders/{id}/revise', [VerificationOrderController::class, 'revise'])->name('direktur.verification.revise');
-        Route::post('/verification-orders/{id}/approve', [VerificationOrderController::class, 'approve'])->name('direktur.verification.approve');
-        Route::get('/verification-po', [VerificationPOController::class, 'index'])->name('direktur.verificationpo.index');
-        Route::post('/verification-po/{id}/approve', [VerificationPOController::class, 'approve'])->name('direktur.verificationpo.approve');
-        Route::post('/verification-po/{id}/reject', [VerificationPOController::class, 'reject'])->name('direktur.verificationpo.reject');
-        Route::get('/po-supplier', [\App\Http\Controllers\Direktur\POSupplierController::class, 'index'])->name('direktur.po-supplier.index');
-        Route::get('/po-supplier/{id}', [\App\Http\Controllers\Direktur\POSupplierController::class, 'show'])->name('direktur.po-supplier.show');
-        Route::post('/po-supplier/{id}/approve', [\App\Http\Controllers\Direktur\POSupplierController::class, 'approve'])->name('direktur.po-supplier.approve');
-        Route::post('/po-supplier/{id}/reject', [\App\Http\Controllers\Direktur\POSupplierController::class, 'reject'])->name('direktur.po-supplier.reject');
-        Route::get('/products', [\App\Http\Controllers\Direktur\ProductController::class, 'index'])->name('direktur.products.index');
-        Route::get('/profile', [ProfileController::class, 'index'])->name('direktur.profile.index');
-        Route::get('/orders/{id}/preview', [VerificationOrderController::class, 'previewInvoiceFinal'])->name('direktur.invoice.preview');
-        Route::post('/profile/signature', [ProfileController::class, 'updateSignature'])->name('direktur.profile.update-signature');
-        Route::get('/purchase-orders/export/{status}', [VerificationPOController::class, 'exportExcelDirektur'])->name('direktur.po.export');
-        Route::get('/purchase-orders/{id}/export', [VerificationPOController::class, 'exportSinglePO'])->name('direktur.po.export-single');
-        Route::get('/report', [ReportController::class, 'index'])->name('direktur.report.index');
-        Route::get('/report/export', [ReportController::class, 'export'])->name('direktur.report.export');
-        Route::get('/stock-logs', [\App\Http\Controllers\Direktur\StockLogController::class, 'index'])->name('direktur.stock-logs.index');
+        Route::middleware('role:direktur')->group(function () {
+            Route::get('/home', [DirekturHomeController::class, 'index'])->name('direktur.home');
+            Route::get('/verification-orders', [VerificationOrderController::class, 'index'])->name('direktur.verification.orders');
+            Route::post('/verification-orders/{id}/revise', [VerificationOrderController::class, 'revise'])->name('direktur.verification.revise');
+            Route::post('/verification-orders/{id}/approve', [VerificationOrderController::class, 'approve'])->name('direktur.verification.approve');
+            Route::get('/verification-po', [VerificationPOController::class, 'index'])->name('direktur.verificationpo.index');
+            Route::post('/verification-po/{id}/approve', [VerificationPOController::class, 'approve'])->name('direktur.verificationpo.approve');
+            Route::post('/verification-po/{id}/reject', [VerificationPOController::class, 'reject'])->name('direktur.verificationpo.reject');
+            Route::get('/po-supplier', [\App\Http\Controllers\Direktur\POSupplierController::class, 'index'])->name('direktur.po-supplier.index');
+            Route::get('/po-supplier/{id}', [\App\Http\Controllers\Direktur\POSupplierController::class, 'show'])->name('direktur.po-supplier.show');
+            Route::post('/po-supplier/{id}/approve', [\App\Http\Controllers\Direktur\POSupplierController::class, 'approve'])->name('direktur.po-supplier.approve');
+            Route::post('/po-supplier/{id}/reject', [\App\Http\Controllers\Direktur\POSupplierController::class, 'reject'])->name('direktur.po-supplier.reject');
+            Route::get('/products', [\App\Http\Controllers\Direktur\ProductController::class, 'index'])->name('direktur.products.index');
+            Route::get('/profile', [ProfileController::class, 'index'])->name('direktur.profile.index');
+            Route::get('/orders/{id}/preview', [VerificationOrderController::class, 'previewInvoiceFinal'])->name('direktur.invoice.preview');
+            Route::post('/profile/signature', [ProfileController::class, 'updateSignature'])->name('direktur.profile.update-signature');
+            Route::get('/purchase-orders/export/{status}', [VerificationPOController::class, 'exportExcelDirektur'])->name('direktur.po.export');
+            Route::get('/purchase-orders/{id}/export', [VerificationPOController::class, 'exportSinglePO'])->name('direktur.po.export-single');
+            Route::get('/report', [ReportController::class, 'index'])->name('direktur.report.index');
+            Route::get('/report/export', [ReportController::class, 'export'])->name('direktur.report.export');
+            Route::get('/stock-logs', [\App\Http\Controllers\Direktur\StockLogController::class, 'index'])->name('direktur.stock-logs.index');
+        });
     });
 
-
-    Route::get('/driver/home', [DriverHomeController::class, 'index'])->name('driver.home');
-    Route::post('/driver/delivery/{id}/status', [DriverHomeController::class, 'updateStatus'])->name('driver.delivery.update-status');
-    Route::post('/driver/delivery/{id}/spb', [DriverHomeController::class, 'generateSpb'])->name('driver.delivery.spb');
+    Route::middleware('role:driver')->group(function () {
+        Route::get('/driver/home', [DriverHomeController::class, 'index'])->name('driver.home');
+        Route::post('/driver/delivery/{id}/status', [DriverHomeController::class, 'updateStatus'])->name('driver.delivery.update-status');
+        Route::post('/driver/delivery/{id}/spb', [DriverHomeController::class, 'generateSpb'])->name('driver.delivery.spb');
+    });
 });

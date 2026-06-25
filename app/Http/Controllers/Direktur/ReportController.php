@@ -3,75 +3,167 @@
 namespace App\Http\Controllers\Direktur;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Customer;
 use App\Models\Delivery;
 use App\Models\Order;
+use App\Models\OrderDetail;
+use App\Models\Product;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\DeliveryReportExport;
-use App\Exports\SalesReportExport;
+use App\Exports\StockMutationExport;
 
 class ReportController extends Controller
 {
+    /**
+     * Menampilkan halaman laporan dengan 4 tab:
+     * 1. Laporan Stok (Mutasi Stok)
+     * 2. Laporan Pengiriman
+     * 3. Laporan Pemasaran (Sales)
+     * 4. Laporan Pelanggan
+     */
     public function index(Request $request)
     {
-        $period = $request->input('period', 'month');
-        $queryDelivery = Delivery::with(['order.customer', 'driver', 'order.orderDetail.product']);
-        $queryOrder = Order::with(['sales', 'customer']);
+        // --- Ambil rentang tanggal dari request, default: 7 hari terakhir ---
+        $startDate = $request->input('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : Carbon::now()->subDays(6)->startOfDay();
 
-        if ($period == 'today') {
-            $queryDelivery->whereDate('created_at', Carbon::today());
-            $queryOrder->whereDate('order_date', Carbon::today());
-        } elseif ($period == 'week') {
-            $queryDelivery->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-            $queryOrder->whereBetween('order_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        } elseif ($period == 'month') {
-            $queryDelivery->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year);
-            $queryOrder->whereMonth('order_date', Carbon::now()->month)->whereYear('order_date', Carbon::now()->year);
+        $endDate = $request->input('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        // ====================================================================
+        // TAB 1: LAPORAN STOK (MUTASI STOK)
+        // ====================================================================
+
+        // Ambil semua produk
+        $products = Product::orderBy('product_name')->get();
+
+        // Buat array tanggal antara startDate dan endDate
+        $dates = [];
+        $currentDate = $startDate->copy();
+        while ($currentDate->lte($endDate)) {
+            $dates[] = $currentDate->copy();
+            $currentDate->addDay();
         }
 
-        $deliveries = $queryDelivery->orderBy('created_at', 'desc')->get();
-        $orders = $queryOrder->whereIn('status', ['completed', 'approved'])->get();
+        // Ambil semua order detail dalam rentang tanggal, group by product_id dan tanggal
+        // Hanya untuk order dengan status 'paid'
+        $orderDetails = OrderDetail::with(['order', 'product'])
+            ->whereHas('order', function ($q) use ($startDate, $endDate) {
+                $q->where('status', 'paid')
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->get();
 
-        // Group orders by sales
-        $salesData = [];
-        foreach ($orders as $order) {
-            if ($order->sales) {
-                $salesId = $order->sales->id_user;
-                if (!isset($salesData[$salesId])) {
-                    $salesData[$salesId] = (object)[
-                        'id' => $salesId,
-                        'name' => $order->sales->name,
-                        'email' => $order->sales->email,
-                        'total_orders' => 0,
-                        'total_revenue' => 0,
-                        'orders' => []
-                    ];
-                }
-                $salesData[$salesId]->total_orders += 1;
-                $salesData[$salesId]->total_revenue += $order->grand_total;
-                $salesData[$salesId]->orders[] = $order;
+        // Susun data mutasi stok: [product_id][tanggal_string] = [ord, bns, disc]
+        $mutationData = [];
+        foreach ($orderDetails as $detail) {
+            $productId = $detail->product_id;
+            $dateKey = Carbon::parse($detail->order->created_at)->format('Y-m-d');
+
+            if (!isset($mutationData[$productId][$dateKey])) {
+                $mutationData[$productId][$dateKey] = ['ord' => 0, 'bns' => 0, 'disc' => 0];
             }
-        }
-        
-        $salesReports = collect($salesData)->sortByDesc('total_revenue')->values();
 
-        return view('direktur.report', compact('deliveries', 'salesReports', 'period'));
+            $mutationData[$productId][$dateKey]['ord'] += $detail->qty;
+            $mutationData[$productId][$dateKey]['bns'] += $detail->bonus_qty ?? 0;
+            $mutationData[$productId][$dateKey]['disc'] += $detail->discount ?? 0;
+        }
+
+        // Hitung stok awal (stok sebelum startDate) per produk
+        // Stok awal = current_stock + total qty terjual dari startDate sampai sekarang
+        $soldAfterStart = OrderDetail::whereHas('order', function ($q) use ($startDate) {
+            $q->where('status', 'paid')
+                ->where('created_at', '>=', $startDate);
+        })
+            ->selectRaw('product_id, SUM(qty) as total_qty')
+            ->groupBy('product_id')
+            ->pluck('total_qty', 'product_id');
+
+        // ====================================================================
+        // TAB 2: LAPORAN PENGIRIMAN
+        // ====================================================================
+        $deliveries = Delivery::with(['order.customer', 'driver'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // ====================================================================
+        // TAB 3: LAPORAN PEMASARAN (OMZET & PERFORMA SALES)
+        // ====================================================================
+        $salesUsers = User::where('role', 'sales')->get();
+
+        $salesReports = [];
+        foreach ($salesUsers as $salesUser) {
+            $salesOrders = Order::where('sales_id', $salesUser->id_user)
+                ->where('status', 'paid')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->get();
+
+            $salesReports[] = (object) [
+                'id' => $salesUser->id_user,
+                'name' => $salesUser->name,
+                'email' => $salesUser->email,
+                'total_orders' => $salesOrders->count(),
+                'total_revenue' => $salesOrders->sum('grand_total'),
+            ];
+        }
+
+        // Urutkan berdasarkan total_revenue tertinggi
+        usort($salesReports, fn($a, $b) => $b->total_revenue <=> $a->total_revenue);
+
+        // ====================================================================
+        // TAB 4: LAPORAN PELANGGAN
+        // ====================================================================
+        $customers = Customer::with([
+            'orders' => function ($q) use ($startDate, $endDate) {
+                $q->where('status', 'paid')
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+            }
+        ])
+            ->get()
+            ->map(function ($customer) {
+                $customer->order_count = $customer->orders->count();
+                $customer->total_spending = $customer->orders->sum('grand_total');
+                return $customer;
+            })
+            ->filter(fn($c) => $c->order_count > 0)
+            ->sortByDesc('total_spending')
+            ->values();
+
+        return view('direktur.report', compact(
+            'products',
+            'dates',
+            'mutationData',
+            'soldAfterStart',
+            'deliveries',
+            'salesReports',
+            'customers',
+            'startDate',
+            'endDate'
+        ));
     }
 
+    /**
+     * Export Laporan Mutasi Stok ke file Excel (.xlsx)
+     */
     public function export(Request $request)
     {
-        $type = $request->input('type');
-        $period = $request->input('period', 'month');
-        
-        $dateStr = Carbon::now()->format('Y-m-d');
-        
-        if ($type == 'pengiriman') {
-            return Excel::download(new DeliveryReportExport($period), 'Laporan_Pengiriman_' . $dateStr . '.xlsx');
-        } elseif ($type == 'pemasaran') {
-            return Excel::download(new SalesReportExport($period), 'Laporan_Pemasaran_' . $dateStr . '.xlsx');
-        }
-        
-        return back()->with('error', 'Tipe export tidak valid');
+        $startDate = $request->input('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : Carbon::now()->subDays(6)->startOfDay();
+
+        $endDate = $request->input('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        $fileName = 'Laporan_Mutasi_Stok_'
+            . $startDate->format('d-m-Y') . '_sd_'
+            . $endDate->format('d-m-Y') . '.xlsx';
+
+        return Excel::download(new StockMutationExport($startDate, $endDate), $fileName);
     }
 }

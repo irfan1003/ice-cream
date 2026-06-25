@@ -70,9 +70,12 @@
                                             'pending_admin_gudang' => 'bg-blue-100 text-blue-700 border-blue-200',
                                             'shipped' => 'bg-indigo-100 text-indigo-700 border-indigo-200',
                                             'delivered' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                            'ditolak' => 'bg-red-100 text-red-700 border-red-200',
                                         ];
                                         $currentStatus = $delivery->delivery_status;
-                                        $class = $statusClasses[$currentStatus] ?? 'bg-slate-100 text-slate-700 border-slate-200';
+                                        $class =
+                                            $statusClasses[$currentStatus] ??
+                                            'bg-slate-100 text-slate-700 border-slate-200';
                                     @endphp
                                     <span
                                         class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border {{ $class }}">
@@ -93,6 +96,15 @@
                                         </a>
 
                                         @if ($delivery->delivery_status === 'pending_admin_kantor')
+                                            <button onclick="rejectSuratJalan({{ $delivery->id_deliver }})"
+                                                class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                title="Tolak Surat Jalan">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
                                             <button onclick="updateStatusToGudang({{ $delivery->id_deliver }})"
                                                 class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
                                                 title="Teruskan ke Gudang">
@@ -117,6 +129,42 @@
             </div>
         </div>
     </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeRejectModal()"></div>
+
+            <div class="relative bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl transition-all border border-slate-100">
+                <div class="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-900">Alasan Penolakan</h3>
+                    <button onclick="closeRejectModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <input type="hidden" id="rejectDeliveryId">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="revision_notes" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Catatan Penolakan</label>
+                            <textarea id="revision_notes" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all outline-none text-sm" placeholder="Masukkan alasan penolakan..."></textarea>
+                            <p id="revision_notes_error" class="mt-1.5 text-xs text-red-500 hidden">Alasan penolakan wajib diisi.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="closeRejectModal()" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all">
+                                Batal
+                            </button>
+                            <button onclick="confirmRejectSuratJalan()" class="flex-1 px-4 py-3 rounded-xl bg-rose-500 text-white font-bold text-sm hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20">
+                                Simpan & Tolak
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -135,15 +183,17 @@
                 showLoaderOnConfirm: true,
                 preConfirm: () => {
                     return fetch(`/admin/deliveries/${id}/to-gudang`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        }
-                    })
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
                         .then(response => {
                             if (!response.ok) {
-                                return response.json().then(json => { throw new Error(json.message || 'Gagal memperbarui status') });
+                                return response.json().then(json => {
+                                    throw new Error(json.message || 'Gagal memperbarui status')
+                                });
                             }
                             return response.json();
                         })
@@ -163,6 +213,62 @@
                     });
                 }
             });
+        }
+
+        function rejectSuratJalan(id) {
+            document.getElementById('rejectDeliveryId').value = id;
+            document.getElementById('revision_notes').value = '';
+            document.getElementById('revision_notes_error').classList.add('hidden');
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+        }
+
+        function confirmRejectSuratJalan() {
+            const id = document.getElementById('rejectDeliveryId').value;
+            const revisionNotes = document.getElementById('revision_notes').value.trim();
+            const errorEl = document.getElementById('revision_notes_error');
+
+            if (!revisionNotes) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            errorEl.classList.add('hidden');
+
+            const btn = event.currentTarget;
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+
+            fetch(`/admin/deliveries/${id}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ revision_notes: revisionNotes })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeRejectModal();
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: data.message,
+                            icon: 'success'
+                        }).then(() => window.location.reload());
+                    } else {
+                        Swal.fire('Gagal!', data.message, 'error');
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('Error!', 'Terjadi kesalahan, silakan coba lagi.', 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = 'Simpan & Tolak';
+                });
         }
     </script>
 @endpush

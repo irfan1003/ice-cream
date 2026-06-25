@@ -123,6 +123,18 @@
                                                 </svg>
                                             </button>
                                         @endif
+
+                                        @if ($order->delivery && $order->delivery->delivery_status === 'ditolak')
+                                            <button onclick="openEditDeliveryDateModal({{ $order->delivery->id_deliver }}, '{{ $order->delivery->delivery_date }}')"
+                                                class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                                title="Edit Tanggal Pengiriman">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -296,6 +308,43 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Delivery Date Modal -->
+    <div id="editDeliveryDateModal" class="fixed inset-0 z-[70] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeEditDeliveryDateModal()"></div>
+
+            <div class="relative bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl transition-all border border-slate-100">
+                <div class="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-900">Edit Tanggal Pengiriman</h3>
+                    <button onclick="closeEditDeliveryDateModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <input type="hidden" id="editDeliveryId">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="delivery_date_input" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Tanggal Pengiriman</label>
+                            <input type="date" id="delivery_date_input"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all outline-none text-sm text-slate-900">
+                            <p id="delivery_date_error" class="mt-1.5 text-xs text-red-500 hidden">Tanggal pengiriman wajib diisi.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="closeEditDeliveryDateModal()" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all">
+                                Batal
+                            </button>
+                            <button onclick="confirmEditDeliveryDate()" id="btnSaveDeliveryDate" class="flex-1 px-4 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20">
+                                Simpan
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -537,6 +586,63 @@
                             window.location.reload();
                         });
                     }
+                });
+            }
+            function openEditDeliveryDateModal(deliveryId, currentDate) {
+                document.getElementById('editDeliveryId').value = deliveryId;
+                document.getElementById('delivery_date_input').value = currentDate ? currentDate.substring(0, 10) : '';
+                document.getElementById('delivery_date_error').classList.add('hidden');
+                document.getElementById('editDeliveryDateModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeEditDeliveryDateModal() {
+                document.getElementById('editDeliveryDateModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            function confirmEditDeliveryDate() {
+                const id = document.getElementById('editDeliveryId').value;
+                const deliveryDate = document.getElementById('delivery_date_input').value;
+                const errorEl = document.getElementById('delivery_date_error');
+                const btn = document.getElementById('btnSaveDeliveryDate');
+
+                if (!deliveryDate) {
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+                errorEl.classList.add('hidden');
+
+                btn.disabled = true;
+                btn.textContent = 'Menyimpan...';
+
+                fetch(`/admin-gudang/inc-orders/${id}/update-delivery-date`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ delivery_date: deliveryDate })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeEditDeliveryDateModal();
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: data.message,
+                            icon: 'success'
+                        }).then(() => window.location.reload());
+                    } else {
+                        Swal.fire('Gagal!', data.message, 'error');
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('Error!', 'Terjadi kesalahan, silakan coba lagi.', 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = 'Simpan';
                 });
             }
         </script>

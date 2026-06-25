@@ -83,6 +83,13 @@
             @php
                 $tables = [
                     [
+                        'title' => 'Faktur Perlu Direvisi',
+                        'data' => $revisedOrders,
+                        'color' => 'amber',
+                        'icon' =>
+                            'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+                    ],
+                    [
                         'title' => 'Faktur Disetujui',
                         'data' => $approvedOrders,
                         'color' => 'emerald',
@@ -174,6 +181,15 @@
                                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
+                                                    <button onclick="resubmitOrder({{ $order->id_order }})"
+                                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                        title="Kirim Ulang ke Direktur">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                        </svg>
+                                                    </button>
                                                     <a href="{{ route('admin.incorders.preview', $order->id_order) }}"
                                                         class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                                         title="Lihat Detail">
@@ -242,7 +258,8 @@
                     [
                         'title' => 'P.O Revisi',
                         'status' => 'revised',
-                        'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+                        'icon' =>
+                            'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
                     ],
                 ];
             @endphp
@@ -391,8 +408,7 @@
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
                                                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                                stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                                         </svg>
                                                     </button>
                                                 @endif
@@ -438,11 +454,13 @@
                 <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                     <div class="grid grid-cols-2 gap-8">
                         <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Data Pelanggan</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Data Pelanggan
+                            </p>
                             <p class="text-sm font-bold text-slate-900" id="modalCustomerName"></p>
                         </div>
                         <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Sales Penginput</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Sales
+                                Penginput</p>
                             <p class="text-sm font-bold text-slate-900" id="modalSalesName"></p>
                         </div>
                     </div>
@@ -481,36 +499,56 @@
                 onclick="closeModal('editOrderModal')"></div>
             <div
                 class="relative bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl transition-all border border-slate-100">
-                <form id="editOrderForm" onsubmit="submitEditOrder(event)">
-                    @csrf
+                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-amber-50/40">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900" id="editOrderNumber">Edit Order Revisi</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Sesuaikan qty, bonus, dan diskon item yang direvisi.
+                        </p>
+                    </div>
+                    <button type="button" onclick="closeModal('editOrderModal')"
+                        class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6 max-h-[65vh] overflow-y-auto">
                     <input type="hidden" id="editOrderId">
-                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900" id="editOrderNumber">Edit Order</h3>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Sesuaikan detail pesanan yang perlu direvisi.</p>
-                        </div>
-                        <button type="button" onclick="closeModal('editOrderModal')"
-                            class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                    <div class="border border-slate-100 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-100">
+                                <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                    <th class="px-4 py-3">Produk</th>
+                                    <th class="px-4 py-3 text-center w-24">Qty</th>
+                                    <th class="px-4 py-3 text-center w-24">Bonus</th>
+                                    <th class="px-4 py-3 text-center w-32">Diskon / pcs</th>
+                                    <th class="px-4 py-3 text-right">Harga Satuan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="editOrderItems" class="divide-y divide-slate-50 text-slate-700"></tbody>
+                        </table>
                     </div>
-                    <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                        <div id="editOrderItems" class="space-y-4">
-                            <!-- Dynamic Items -->
-                        </div>
-                    </div>
-                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                </div>
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <button type="button" onclick="resubmitOrderFromEdit()"
+                        class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Kirim ke Direktur
+                    </button>
+                    <div class="flex items-center gap-3">
                         <button type="button" onclick="closeModal('editOrderModal')"
                             class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors">Batal</button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-brand-blue text-white text-sm font-bold rounded-xl shadow-lg shadow-brand-blue/20 hover:bg-brand-blue-dark transition-all">Simpan
+                        <button type="button" onclick="submitEditOrder()"
+                            class="px-6 py-2 bg-amber-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-amber-200 hover:bg-amber-600 transition-all">Simpan
                             Perubahan</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
@@ -525,7 +563,8 @@
                 <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-amber-50/40">
                     <div>
                         <h3 class="text-base font-bold text-slate-900" id="editRevisedPONumber">Edit P.O Revisi</h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5">Sesuaikan qty, bonus, dan diskon item yang direvisi.</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Sesuaikan qty, bonus, dan diskon item yang direvisi.
+                        </p>
                     </div>
                     <button type="button" onclick="closeModal('editRevisedPOModal')"
                         class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
@@ -583,7 +622,9 @@
             function showPODetails(po) {
                 document.getElementById('modalPONumber').innerText = `Purchase Order #${po.po_number}`;
                 document.getElementById('modalPODate').innerText = new Date(po.po_date).toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'long', year: 'numeric'
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
                 });
                 document.getElementById('modalCustomerName').innerText = po.customer?.customer_name || 'N/A';
                 document.getElementById('modalSalesName').innerText = po.sales?.name || 'N/A';
@@ -631,11 +672,20 @@
                     try {
                         const response = await fetch(`/admin/purchase-orders/${id}/convert`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
                         });
                         const data = await response.json();
                         if (data.success) {
-                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false })
+                            Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                })
                                 .then(() => location.reload());
                         } else {
                             Swal.fire('Gagal', data.message, 'error');
@@ -663,11 +713,20 @@
                     try {
                         const response = await fetch(`/admin/orders/${id}/mark-as-paid`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
                         });
                         const data = await response.json();
                         if (data.success) {
-                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false })
+                            Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                })
                                 .then(() => location.reload());
                         } else {
                             Swal.fire('Gagal', data.message, 'error');
@@ -717,10 +776,10 @@
             function getRevisedPOPayload() {
                 const tbody = document.getElementById('editRevisedPOItems');
                 return Array.from(tbody.querySelectorAll('tr')).map(row => ({
-                    id:        row.querySelector('input[name="item_id[]"]').value,
-                    qty:       parseInt(row.querySelector('input[name="qty[]"]').value),
+                    id: row.querySelector('input[name="item_id[]"]').value,
+                    qty: parseInt(row.querySelector('input[name="qty[]"]').value),
                     bonus_qty: parseInt(row.querySelector('input[name="bonus_qty[]"]').value) || 0,
-                    discount:  parseFloat(row.querySelector('input[name="discount[]"]').value) || 0,
+                    discount: parseFloat(row.querySelector('input[name="discount[]"]').value) || 0,
                 }));
             }
 
@@ -729,12 +788,23 @@
                 try {
                     const response = await fetch(`/admin/purchase-orders/${id}/update-revised`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                        body: JSON.stringify({ items: getRevisedPOPayload() })
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            items: getRevisedPOPayload()
+                        })
                     });
                     const data = await response.json();
                     if (data.success) {
-                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false })
+                        Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: data.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            })
                             .then(() => location.reload());
                     } else {
                         Swal.fire('Gagal', data.message, 'error');
@@ -763,20 +833,37 @@
                     // 1. Save changes
                     const saveResp = await fetch(`/admin/purchase-orders/${id}/update-revised`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                        body: JSON.stringify({ items: getRevisedPOPayload() })
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            items: getRevisedPOPayload()
+                        })
                     });
                     const saveData = await saveResp.json();
-                    if (!saveData.success) { Swal.fire('Gagal Simpan', saveData.message, 'error'); return; }
+                    if (!saveData.success) {
+                        Swal.fire('Gagal Simpan', saveData.message, 'error');
+                        return;
+                    }
 
                     // 2. Resubmit
                     const submitResp = await fetch(`/admin/purchase-orders/${id}/resubmit`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
                     });
                     const submitData = await submitResp.json();
                     if (submitData.success) {
-                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: submitData.message, timer: 2000, showConfirmButton: false })
+                        Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: submitData.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            })
                             .then(() => location.reload());
                     } else {
                         Swal.fire('Gagal', submitData.message, 'error');
@@ -802,11 +889,227 @@
                     try {
                         const response = await fetch(`/admin/purchase-orders/${id}/resubmit`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
                         });
                         const data = await response.json();
                         if (data.success) {
-                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: data.message, timer: 2000, showConfirmButton: false })
+                            Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                })
+                                .then(() => location.reload());
+                        } else {
+                            Swal.fire('Gagal', data.message, 'error');
+                        }
+                    } catch (error) {
+                        Swal.fire('Error', 'Gagal menghubungi server.', 'error');
+                    }
+                }
+            }
+
+            // ── Edit Revised Order ─────────────────────────────────────────
+            function editOrder(order) {
+                console.log('Order data:', order);
+                document.getElementById('editOrderId').value = order.id_order;
+                document.getElementById('editOrderNumber').innerText = `Edit Order Revisi #${order.order_number}`;
+
+                let rows = '';
+                const orderDetails = order.orderDetail || order.order_detail;
+                console.log('Order details:', orderDetails);
+                if (orderDetails && orderDetails.length > 0) {
+                    orderDetails.forEach(item => {
+                        rows += `
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <input type="hidden" name="item_id[]" value="${item.id_order_detail}">
+                                    <span class="font-bold text-slate-900">${item.product?.product_name || 'N/A'}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input type="number" name="qty[]" value="${item.qty}" min="1"
+                                        class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input type="number" name="bonus_qty[]" value="${item.bonus_qty ?? 0}" min="0"
+                                        class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input type="number" name="discount[]" value="${item.discount ?? 0}" min="0" step="0.01"
+                                        class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                                </td>
+                                <td class="px-4 py-3 text-right text-slate-500 font-medium">
+                                    Rp ${new Intl.NumberFormat('id-ID').format(item.price_at_time)}
+                                </td>
+                            </tr>`;
+                    });
+                }
+
+                document.getElementById('editOrderItems').innerHTML = rows;
+                document.getElementById('editOrderModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function getRevisedOrderPayload() {
+                const tbody = document.getElementById('editOrderItems');
+                const rows = tbody.querySelectorAll('tr');
+                console.log('Rows:', rows);
+                const payload = Array.from(rows).map(row => {
+                    const idInput = row.querySelector('input[name="item_id[]"]');
+                    const qtyInput = row.querySelector('input[name="qty[]"]');
+                    const bonusQtyInput = row.querySelector('input[name="bonus_qty[]"]');
+                    const discountInput = row.querySelector('input[name="discount[]"]');
+                    return {
+                        id: idInput ? idInput.value : null,
+                        qty: qtyInput ? parseInt(qtyInput.value) : null,
+                        bonus_qty: bonusQtyInput ? parseInt(bonusQtyInput.value) || 0 : 0,
+                        discount: discountInput ? parseFloat(discountInput.value) || 0 : 0,
+                    };
+                });
+                console.log('Payload:', payload);
+                return payload;
+            }
+
+            async function submitEditOrder() {
+                const id = document.getElementById('editOrderId').value;
+                console.log('Submit edit order for ID:', id);
+                const payload = getRevisedOrderPayload();
+                console.log('Full request payload:', {
+                    items: payload
+                });
+                try {
+                    const response = await fetch(`/admin/orders/${id}/update-revised`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            items: payload
+                        })
+                    });
+                    console.log('Response status:', response.status);
+                    const text = await response.text();
+                    console.log('Response body:', text);
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Failed to parse JSON:', e);
+                        Swal.fire('Error', 'Respons server tidak valid.', 'error');
+                        return;
+                    }
+                    if (data.success) {
+                        Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: data.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            })
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('Gagal', data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    Swal.fire('Error', 'Gagal menghubungi server: ' + error.message, 'error');
+                }
+            }
+
+            async function resubmitOrderFromEdit() {
+                const id = document.getElementById('editOrderId').value;
+
+                const confirm = await Swal.fire({
+                    title: 'Simpan & Kirim ke Direktur?',
+                    text: 'Perubahan akan disimpan, kemudian Order dikirim ulang ke Direktur untuk persetujuan.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#4F46E5',
+                    cancelButtonColor: '#94A3B8',
+                    confirmButtonText: 'Ya, Kirim!',
+                    cancelButtonText: 'Batal'
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    // 1. Save changes
+                    const saveResp = await fetch(`/admin/orders/${id}/update-revised`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            items: getRevisedOrderPayload()
+                        })
+                    });
+                    const saveData = await saveResp.json();
+                    if (!saveData.success) {
+                        Swal.fire('Gagal Simpan', saveData.message, 'error');
+                        return;
+                    }
+
+                    // 2. Resubmit
+                    const submitResp = await fetch(`/admin/orders/${id}/resubmit`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                    const submitData = await submitResp.json();
+                    if (submitData.success) {
+                        Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: submitData.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            })
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('Gagal', submitData.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Gagal menghubungi server.', 'error');
+                }
+            }
+
+            async function resubmitOrder(id) {
+                const result = await Swal.fire({
+                    title: 'Kirim Ulang ke Direktur?',
+                    text: 'Order akan dikirim ulang ke Direktur untuk persetujuan.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#4F46E5',
+                    cancelButtonColor: '#94A3B8',
+                    confirmButtonText: 'Ya, Kirim!',
+                    cancelButtonText: 'Batal'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`/admin/orders/${id}/resubmit`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                })
                                 .then(() => location.reload());
                         } else {
                             Swal.fire('Gagal', data.message, 'error');

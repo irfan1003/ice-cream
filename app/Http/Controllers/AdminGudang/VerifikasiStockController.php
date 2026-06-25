@@ -46,6 +46,7 @@ class VerifikasiStockController extends Controller
         $request->validate([
             'details' => 'required|array',
             'details.*.is_compatible' => 'nullable|boolean',
+            'details.*.qty_received' => 'nullable|integer|min:0',
             'details.*.reject_reason' => 'nullable|string|max:255',
         ]);
 
@@ -58,8 +59,21 @@ class VerifikasiStockController extends Controller
                     $detail = SupplierPoDetail::findOrFail($detailId);
                     $isCompatible = isset($data['is_compatible']) && $data['is_compatible'] == '1';
 
+                    // Jika sesuai, gunakan qty dari detail
+                    // Jika tidak sesuai, pastikan user mengisi qty_received
+                    if ($isCompatible) {
+                        $qtyReceived = $detail->qty;
+                    } else {
+                        $qtyReceived = $data['qty_received'] ?? null;
+                        // Validasi manual: jika tidak sesuai, qty_received harus diisi
+                        if ($qtyReceived === null) {
+                            throw new \Exception('Qty Diterima harus diisi untuk barang yang tidak sesuai');
+                        }
+                    }
+
                     $detail->update([
                         'is_compatible' => $isCompatible,
+                        'qty_received' => $qtyReceived,
                         'reject_reason' => !$isCompatible ? ($data['reject_reason'] ?? null) : null,
                     ]);
 

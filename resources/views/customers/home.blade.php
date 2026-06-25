@@ -30,7 +30,6 @@
                 @php
                     $orderTables = [
                         ['title' => 'Menunggu Persetujuan', 'statuses' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                        ['title' => 'Perlu Revisi', 'statuses' => ['revised'], 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
                         ['title' => 'Disetujui & Diproses', 'statuses' => ['approved', 'processing'], 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
                         ['title' => 'Dikirim & Selesai', 'statuses' => ['shipped', 'delivered', 'completed'], 'icon' => 'M5 13l4 4L19 7'],
                         ['title' => 'Ditolak', 'statuses' => ['rejected'], 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
@@ -143,9 +142,7 @@
                 @php
                     $poTables = [
                         ['title' => 'Menunggu Persetujuan', 'statuses' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                        ['title' => 'Perlu Revisi', 'statuses' => ['revised'], 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
                         ['title' => 'Disetujui', 'statuses' => ['approved'], 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                        ['title' => 'Stok Tiba & Dikonversi', 'statuses' => ['stock_arrived', 'converted'], 'icon' => 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0L12 16l-8-3m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4'],
                         ['title' => 'Ditolak', 'statuses' => ['rejected'], 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
                     ];
                 @endphp

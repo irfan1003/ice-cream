@@ -67,7 +67,8 @@
                         class="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100">
                         <th class="px-6 py-4 font-bold w-12"></th>
                         <th class="px-6 py-4 font-bold">Produk</th>
-                        <th class="px-6 py-4 font-bold text-center">Qty</th>
+                        <th class="px-6 py-4 font-bold text-center">Qty Dipesan</th>
+                        <th class="px-6 py-4 font-bold text-center">Qty Diterima</th>
                         <th class="px-6 py-4 font-bold text-center">Sesuai</th>
                         <th class="px-6 py-4 font-bold">Catatan Perbedaan Gudang</th>
                     </tr>
@@ -87,6 +88,9 @@
                             </td>
                             <td class="px-6 py-4 text-center font-bold text-slate-900">
                                 {{ $detail->qty }}
+                            </td>
+                            <td class="px-6 py-4 text-center font-bold text-emerald-600">
+                                {{ $detail->qty_received ?? '-' }}
                             </td>
                             <td class="px-6 py-4 text-center">
                                 @if ($detail->is_compatible)

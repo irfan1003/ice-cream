@@ -81,12 +81,30 @@ class VerificationOrderController extends Controller
                     mkdir(dirname($fullPath), 0755, true);
                 }
 
-                Browsershot::html($html)
-                    ->setNodeBinary('C:/Program Files/nodejs/node.exe')
-                    ->setNpmBinary('C:/Program Files/nodejs/npm.cmd')
-                    ->setChromePath('C:/Users/A c e r/.cache/puppeteer/chrome-headless-shell/win64-148.0.7778.97/chrome-headless-shell-win64/chrome-headless-shell.exe')
-                    ->noSandbox()
-                    ->windowSize(1400, 2000)
+                // Browsershot::html($html)
+                //     ->setNodeBinary('C:/Program Files/nodejs/node.exe')
+                //     ->setNpmBinary('C:/Program Files/nodejs/npm.cmd')
+                //     // ->setChromePath('C:/Users/A c e r/.cache/puppeteer/chrome-headless-shell/win64-148.0.7778.97/chrome-headless-shell-win64/chrome-headless-shell.exe')
+                //     ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe')
+                //     ->noSandbox()
+                //     ->windowSize(1400, 2000)
+                //     ->showBackground()
+                //     ->margins(20, 20, 20, 20)
+                //     ->format('A4')
+                //     ->save($fullPath);
+
+                $browsershot = Browsershot::html($html);
+
+                if (app()->environment('local')) {
+                    $browsershot->setNodeBinary('C:/Program Files/nodejs/node.exe')
+                        ->setNpmBinary('C:/Program Files/nodejs/npm.cmd')
+                        ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe');
+                } else {
+                    $browsershot->setChromePath('/usr/bin/chromium')
+                        ->noSandbox();
+                }
+
+                $browsershot->windowSize(1400, 2000)
                     ->showBackground()
                     ->margins(20, 20, 20, 20)
                     ->format('A4')

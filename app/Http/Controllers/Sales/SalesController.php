@@ -15,8 +15,28 @@ class SalesController extends Controller
     {
         $salesId = auth()->id();
 
-        $orderStatuses = ['pending_coordinator', 'pending_director', 'revised', 'approved', 'pending_admin', 'completed', 'rejected'];
-        $poStatuses = ['pending_coordinator', 'pending_admin', 'pending_director', 'approved', 'revised', 'stock_arrived', 'converted', 'rejected'];
+        // Include all possible statuses
+        $orderStatuses = [
+            'pending_sales',
+            'pending_coordinator', 
+            'pending_director', 
+            'revised', 
+            'approved', 
+            'pending_admin', 
+            'completed', 
+            'paid',
+            'rejected'
+        ];
+        
+        $poStatuses = [
+            'pending_sales',
+            'pending_coordinator', 
+            'pending_admin', 
+            'pending_director', 
+            'approved', 
+            'revised', 
+            'rejected'
+        ];
 
         $orders = Order::with(['customer', 'orderDetail.product', 'delivery'])
             ->where('sales_id', $salesId)

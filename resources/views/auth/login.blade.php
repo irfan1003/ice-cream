@@ -48,7 +48,8 @@
     <div class="w-full max-w-md">
         <!-- Logo Section -->
         <div class="flex flex-col items-center mb-10">
-            <img src="{{ asset('img/logo.jpeg') }}" alt="Logo" class="w-12 h-12 object-cover rounded-xl mb-4 shadow-lg shadow-brand-pink/20">
+            <img src="{{ asset('img/logo.jpeg') }}" alt="Logo"
+                class="w-12 h-12 object-cover rounded-xl mb-4 shadow-lg shadow-brand-pink/20">
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">CV. PRIMA <span
                     class="text-brand-blue-dark">AMANAH</span></h1>
             <p class="text-sm text-slate-400 font-medium mt-1">Management System</p>
@@ -95,8 +96,8 @@
                         <div class="flex justify-between items-center">
                             <label
                                 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
-                            <a href="#"
-                                class="text-[10px] font-bold text-brand-blue-dark hover:underline uppercase tracking-widest">Forgot?</a>
+                            <!-- <a href="#"
+                                class="text-[10px] font-bold text-brand-blue-dark hover:underline uppercase tracking-widest">Forgot?</a> -->
                         </div>
                         <input type="password" name="password" placeholder="••••••••"
                             class="w-full px-4 py-3 bg-slate-50 border {{ $errors->has('email') ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-200' }} rounded-xl text-sm focus:ring-1 focus:ring-brand-pink focus:border-brand-pink outline-none transition-all">
@@ -126,7 +127,8 @@
         </div>
 
         <!-- Footer Info -->
-        <p class="mt-8 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 CV. PRIMA AMANAH
+        <p class="mt-8 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 CV. PRIMA
+            AMANAH
             Digital System</p>
     </div>
 </body>

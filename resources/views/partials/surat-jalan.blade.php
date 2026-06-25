@@ -251,9 +251,9 @@
                 </div>
                 <div style="text-align: right">
                     <span class="info-label">Tanggal:</span>
-                    <span>{{ now()->format('d/m/y') }}</span><br />
-                    <span class="info-label">Jam:</span>
-                    <span>{{ now()->format('H:i') }} WIB</span>
+                    <span>{{ \Carbon\Carbon::parse($delivery->delivery_date)->format('d/m/y') }}</span><br />
+                    <!-- <span class="info-label">Jam:</span>
+                    <span>{{ now()->format('H:i') }} WIB</span> -->
                 </div>
             </div>
         </div>

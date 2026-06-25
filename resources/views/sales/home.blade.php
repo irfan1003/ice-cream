@@ -92,11 +92,10 @@
         <div x-show="activeTab === 'orders'" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             @php
                 $orderTables = [
-                    ['title' => 'Menunggu Persetujuan', 'statuses' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    ['title' => 'Perlu Revisi', 'statuses' => ['revised'], 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
-                    ['title' => 'Disetujui & Diproses', 'statuses' => ['approved', 'processing'], 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    ['title' => 'Dikirim & Selesai', 'statuses' => ['shipped', 'delivered', 'completed'], 'icon' => 'M5 13l4 4L19 7'],
-                    ['title' => 'Ditolak', 'statuses' => ['rejected'], 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['title' => 'Menunggu Persetujuan', 'status' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director', 'revised'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['title' => 'Disetujui & Diproses', 'status' => ['approved', 'completed'], 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['title' => 'Dikirim & Selesai', 'status' => ['shipped', 'delivered', 'paid'], 'icon' => 'M5 13l4 4L19 7'],
+                    ['title' => 'Ditolak', 'status' => ['rejected'], 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
                 ];
             @endphp
 
@@ -104,12 +103,25 @@
                 @php
                     $filteredOrders = collect($orders)->filter(function ($order) use ($table) {
                         $actualStatus = $order->status;
-                        if (in_array($order->status, ['approved', 'completed']) && $order->delivery) {
-                            if (in_array($order->delivery->delivery_status, ['shipped', 'delivered'])) {
-                                $actualStatus = $order->delivery->delivery_status;
+                        
+                        // Map delivery status to display status
+                        if ($order->delivery) {
+                            $deliveryStatus = $order->delivery->delivery_status;
+                            if ($deliveryStatus === 'shipped') {
+                                $actualStatus = 'shipped';
+                            } elseif ($deliveryStatus === 'delivered') {
+                                $actualStatus = 'delivered';
+                            } elseif ($deliveryStatus === 'ready' && $order->status === 'approved') {
+                                $actualStatus = 'approved'; // Keep as approved when ready
                             }
                         }
-                        return in_array($actualStatus, $table['statuses']);
+                        
+                        // Check if order is paid
+                        if ($order->status === 'paid') {
+                            $actualStatus = 'paid';
+                        }
+                        
+                        return in_array($actualStatus, $table['status']);
                     });
                 @endphp
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -157,21 +169,29 @@
                                         <td class="px-6 py-4 text-center">
                                             @php
                                                 $displayStatus = $order->status;
-                                                if ($order->delivery && in_array($order->delivery->delivery_status, ['shipped', 'delivered'])) {
-                                                    $displayStatus = $order->delivery->delivery_status;
+                                                
+                                                // Determine display status based on delivery
+                                                if ($order->delivery) {
+                                                    $deliveryStatus = $order->delivery->delivery_status;
+                                                    if ($deliveryStatus === 'shipped') {
+                                                        $displayStatus = 'shipped';
+                                                    } elseif ($deliveryStatus === 'delivered') {
+                                                        $displayStatus = 'delivered';
+                                                    }
                                                 }
 
                                                 $statusConfig = [
                                                     'pending_sales' => ['label' => 'Menunggu Sales', 'class' => 'bg-amber-100 text-amber-700 border border-amber-200'],
                                                     'pending_coordinator' => ['label' => 'Menunggu Koordinator', 'class' => 'bg-blue-100 text-blue-700 border border-blue-200'],
                                                     'pending_director' => ['label' => 'Menunggu Direktur', 'class' => 'bg-indigo-100 text-indigo-700 border border-indigo-200'],
+                                                    'pending_admin' => ['label' => 'Menunggu Admin', 'class' => 'bg-cyan-100 text-cyan-700 border border-cyan-200'],
                                                     'revised' => ['label' => 'Direvisi', 'class' => 'bg-orange-100 text-orange-700 border border-orange-200'],
                                                     'approved' => ['label' => 'Disetujui', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
+                                                    'completed' => ['label' => 'Selesai', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
                                                     'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-100 text-rose-700 border border-rose-200'],
-                                                    'pending_admin' => ['label' => 'Menunggu Admin', 'class' => 'bg-cyan-100 text-cyan-700 border border-cyan-200'],
                                                     'shipped' => ['label' => 'Dikirim', 'class' => 'bg-purple-100 text-purple-700 border border-purple-200'],
                                                     'delivered' => ['label' => 'Diterima', 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'],
-                                                    'completed' => ['label' => 'Selesai', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
+                                                    'paid' => ['label' => 'Lunas', 'class' => 'bg-green-100 text-green-700 border border-green-200'],
                                                 ];
                                                 $status = $statusConfig[$displayStatus] ?? ['label' => $displayStatus, 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'];
                                             @endphp
@@ -210,18 +230,16 @@
         <div x-show="activeTab === 'pos'" style="display: none;" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             @php
                 $poTables = [
-                    ['title' => 'Menunggu Persetujuan', 'statuses' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    ['title' => 'Perlu Revisi', 'statuses' => ['revised'], 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
-                    ['title' => 'Disetujui', 'statuses' => ['approved'], 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    ['title' => 'Stok Tiba & Dikonversi', 'statuses' => ['stock_arrived', 'converted'], 'icon' => 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0L12 16l-8-3m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4'],
-                    ['title' => 'Ditolak', 'statuses' => ['rejected'], 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['title' => 'Menunggu Persetujuan', 'status' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['title' => 'Disetujui', 'status' => ['approved'], 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['title' => 'Ditolak', 'status' => ['rejected'], 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
                 ];
             @endphp
 
             @foreach ($poTables as $table)
                 @php
                     $filteredPOs = collect($purchaseOrders)->filter(function ($po) use ($table) {
-                        return in_array($po->status, $table['statuses']);
+                        return in_array($po->status, $table['status']);
                     });
                 @endphp
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

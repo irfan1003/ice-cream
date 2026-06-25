@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('po_supplier_id')->index('supplier_po_details_po_supplier_id_foreign');
             $table->unsignedBigInteger('product_id')->index('supplier_po_details_product_id_foreign');
             $table->integer('qty');
+            $table->integer('qty_received');
             $table->boolean('is_compatible')->default(true);
             $table->text('reject_reason')->nullable();
             $table->timestamps();

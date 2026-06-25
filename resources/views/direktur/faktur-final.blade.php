@@ -338,7 +338,7 @@
                         <th>NAMA BARANG</th>
                         <th class="c" style="width:80px;">BANYAKNYA</th>
                         <th class="r" style="width:120px;">HARGA</th>
-                        <th class="r" style="width:80px;">DISC%</th>
+                        <th class="r" style="width:80px;">DISC</th>
                         <th class="r" style="width:120px;">SUBTOTAL</th>
                     </tr>
                 </thead>
@@ -354,7 +354,7 @@
                             </td>
                             <td class="c">{{ $item->qty }}</td>
                             <td class="r">{{ number_format($item->price_at_time, 0, ',', '.') }}</td>
-                            <td class="r">{{ $item->discount ? $item->discount . '%' : '-' }}</td>
+                            <td class="r">{{ 'Rp' . $item->discount ? $item->discount : '-' }}</td>
                             <td class="r">{{ number_format($item->total_item_price, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach

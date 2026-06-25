@@ -16,6 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id')->index('deliveries_order_id_foreign');
             $table->unsignedBigInteger('driver_id')->nullable()->index('deliveries_driver_id_foreign');
             $table->string('spb_number');
+            $table->date('delivery_date')->nullable();
+            $table->text('revision_notes')->nullable();
             $table->string('barcode_gudang')->nullable();
             $table->string('barcode_office')->nullable();
             $table->enum('delivery_status', ['ready', 'pending_admin_kantor', 'pending_admin_gudang', 'ditolak', 'shipped', 'delivered'])->default('pending_admin_kantor');

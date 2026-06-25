@@ -382,7 +382,7 @@
                         <th class="c" style="width:70px;">BANYAKNYA</th>
                         <th class="c" style="width:36px;"></th>
                         <th class="r" style="width:75px;">HARGA</th>
-                        <th class="r" style="width:42px;">DISC%</th>
+                        <th class="r" style="width:42px;">DISC</th>
                         <th class="r" style="width:75px;">SUBTOTAL</th>
                         <th style="width:18px;" class="no-print"></th>
                     </tr>

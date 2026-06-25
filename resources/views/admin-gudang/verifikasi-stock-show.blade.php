@@ -64,10 +64,12 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100">
+                        <tr
+                            class="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100">
                             <th class="px-6 py-4 font-bold w-12"></th>
                             <th class="px-6 py-4 font-bold">Produk</th>
                             <th class="px-6 py-4 font-bold text-center">Qty Dipesan</th>
+                            <th class="px-6 py-4 font-bold text-center">Qty Diterima</th>
                             <th class="px-6 py-4 font-bold text-center">Sesuai</th>
                             <th class="px-6 py-4 font-bold">Catatan (Jika Tidak Sesuai)</th>
                         </tr>
@@ -81,24 +83,35 @@
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-900">{{ $detail->product->product_name ?? '-' }}</div>
                                     @if ($detail->product && $detail->product->brand)
-                                        <span class="text-xs text-slate-400 font-medium uppercase">{{ $detail->product->brand }}</span>
+                                        <span
+                                            class="text-xs text-slate-400 font-medium uppercase">{{ $detail->product->brand }}</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center font-bold text-slate-900">
                                     {{ $detail->qty }}
                                 </td>
                                 <td class="px-6 py-4 text-center">
+                                    <input type="number"
+                                        name="details[{{ $detail->id_supplier_po_detail }}][qty_received]"
+                                        value="{{ old('details.' . $detail->id_supplier_po_detail . '.qty_received', $detail->qty_received) }}"
+                                        data-qty="{{ $detail->qty }}"
+                                        class="qty-received-input w-24 px-3 py-2 border border-slate-300 rounded-lg text-sm text-center focus:ring-1 focus:ring-brand-blue focus:border-brand-blue transition-all">
+                                </td>
+                                <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center">
                                         <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" name="details[{{ $detail->id_supplier_po_detail }}][is_compatible]" value="1"
+                                            <input type="checkbox"
+                                                name="details[{{ $detail->id_supplier_po_detail }}][is_compatible]"
+                                                value="1"
                                                 {{ old('details.' . $detail->id_supplier_po_detail . '.is_compatible', $detail->is_compatible) ? 'checked' : '' }}
-                                                class="w-5 h-5 text-brand-blue rounded border-slate-300 focus:ring-brand-blue focus:border-brand-blue transition-colors">
+                                                class="is-compatible-checkbox w-5 h-5 text-brand-blue rounded border-slate-300 focus:ring-brand-blue focus:border-brand-blue transition-colors">
                                             <span class="text-sm text-slate-600 font-medium">Ya</span>
                                         </label>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <input type="text" name="details[{{ $detail->id_supplier_po_detail }}][reject_reason]"
+                                    <input type="text"
+                                        name="details[{{ $detail->id_supplier_po_detail }}][reject_reason]"
                                         value="{{ old('details.' . $detail->id_supplier_po_detail . '.reject_reason', $detail->reject_reason) }}"
                                         placeholder="Masukkan alasan jika tidak sesuai"
                                         class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-brand-blue focus:border-brand-blue transition-all">
@@ -116,4 +129,28 @@
             </div>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.is-compatible-checkbox').forEach(function(checkbox) {
+                const row = checkbox.closest('tr');
+                const qtyInput = row.querySelector('.qty-received-input');
+
+                function updateQtyReceived() {
+                    if (checkbox.checked) {
+                        qtyInput.value = qtyInput.dataset.qty;
+                        qtyInput.readOnly = true;
+                        qtyInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+                    } else {
+                        qtyInput.value = '';
+                        qtyInput.readOnly = false;
+                        qtyInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                    }
+                }
+
+                updateQtyReceived();
+                checkbox.addEventListener('change', updateQtyReceived);
+            });
+        });
+    </script>
 @endsection

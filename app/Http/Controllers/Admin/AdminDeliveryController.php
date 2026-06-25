@@ -65,4 +65,35 @@ class AdminDeliveryController extends Controller
             ], 500);
         }
     }
+
+    public function rejectSuratJalan(Request $request, $id)
+    {
+        $request->validate([
+            'revision_notes' => 'required|string|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $delivery = Delivery::with('order')->findOrFail($id);
+            $delivery->update([
+                'delivery_status' => 'ditolak',
+                'revision_notes'  => $request->input('revision_notes'),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Surat jalan berhasil ditolak!',
+                'redirect_url' => route('admin.deliveries.index')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menolak surat jalan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

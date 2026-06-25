@@ -239,13 +239,13 @@
                         <th>Harga Rp</th>
                         <th>Qty</th>
                         <th>Bonus</th>
-                        <th>Disk 1 (%)</th>
+                        <th>Disk 1 (Rp)</th>
                         <th>Disk2 Rp</th>
                         <th>Subtotal Rp</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($delivery->order->orderDetail as $index => $detail)
+                    @foreach ($delivery->order->orderDetail as $index => $detail)
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td style="text-align: left">{{ $detail->product->product_name }}</td>

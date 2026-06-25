@@ -18,11 +18,11 @@
                     class="px-6 py-3 text-sm font-bold border-b-2 transition-colors">
                     Daftar Pengiriman
                 </button>
-                <button @click="activeTab = 'logs'" 
+                <!-- <button @click="activeTab = 'logs'" 
                     :class="activeTab === 'logs' ? 'border-brand-pink text-brand-pink' : 'border-transparent text-slate-500 hover:text-slate-700'"
                     class="px-6 py-3 text-sm font-bold border-b-2 transition-colors">
                     Riwayat Stok
-                </button>
+                </button> -->
             </div>
 
             <!-- Deliveries Table -->

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['po_supplier_id', 'product_id', 'qty', 'is_compatible', 'reject_reason'])]
+#[Fillable(['po_supplier_id', 'product_id', 'qty', 'qty_received', 'is_compatible', 'reject_reason'])]
 #[Table('supplier_po_details', key: 'id_supplier_po_detail')]
 class SupplierPoDetail extends Model
 {
