@@ -129,6 +129,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('admin/supplier', SupplierController::class)->names('admin.supplier');
         Route::get('/admin/supplier/{supplier}/json', [SupplierController::class, 'show'])->name('admin.supplier.json');
         Route::resource('admin/po-supplier', PoSupplierController::class)->except(['create', 'edit'])->names('admin.po-supplier');
+        Route::post('/admin/po-supplier/{po_supplier}/resubmit', [PoSupplierController::class, 'resubmit'])->name('admin.po-supplier.resubmit');
         Route::get('/admin/po-supplier/{po_supplier}/json', [PoSupplierController::class, 'show'])->name('admin.po-supplier.json');
         Route::get('/admin/po-supplier/{po_supplier}/export', [PoSupplierController::class, 'export'])->name('admin.po-supplier.export');
     });

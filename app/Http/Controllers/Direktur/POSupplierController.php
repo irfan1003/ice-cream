@@ -12,7 +12,7 @@ class POSupplierController extends Controller
     public function index()
     {
         $poSuppliers = SupplierPo::with('supplier')
-            ->where('status', 'pending_director')
+            ->whereIn('status', ['pending_director_po', 'pending_director_rec'])
             ->orderBy('po_date', 'desc')
             ->get();
 
@@ -30,7 +30,11 @@ class POSupplierController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $po = SupplierPo::findOrFail($id);
-                $po->update(['status' => 'pending_office']);
+                if ($po->status === 'pending_director_po') {
+                    $po->update(['status' => 'ordered']);
+                } elseif ($po->status === 'pending_director_rec') {
+                    $po->update(['status' => 'pending_office']);
+                }
             });
 
             return redirect()->route('direktur.po-supplier.index')->with('success', 'PO Supplier berhasil disetujui!');
@@ -44,7 +48,11 @@ class POSupplierController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $po = SupplierPo::findOrFail($id);
-                $po->update(['status' => 'pending']);
+                if ($po->status === 'pending_director_po') {
+                    $po->update(['status' => 'revised']);
+                } elseif ($po->status === 'pending_director_rec') {
+                    $po->update(['status' => 'rejected']);
+                }
             });
 
             return redirect()->route('direktur.po-supplier.index')->with('success', 'PO Supplier berhasil ditolak!');

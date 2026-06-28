@@ -67,8 +67,10 @@
                         <th class="px-6 py-4 font-bold w-12"></th>
                         <th class="px-6 py-4 font-bold">Produk</th>
                         <th class="px-6 py-4 font-bold text-center">Qty</th>
-                        <th class="px-6 py-4 font-bold text-center">Sesuai</th>
-                        <th class="px-6 py-4 font-bold">Catatan</th>
+                        @if ($poSupplier->status === 'pending_director_rec')
+                            <th class="px-6 py-4 font-bold text-center">Sesuai</th>
+                            <th class="px-6 py-4 font-bold">Catatan</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
@@ -86,16 +88,18 @@
                             <td class="px-6 py-4 text-center font-bold text-slate-900">
                                 {{ $detail->qty }}
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                @if ($detail->is_compatible)
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-100">Ya</span>
-                                @else
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-600 border border-red-100">Tidak</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4">
-                                {{ $detail->reject_reason ?? '-' }}
-                            </td>
+                            @if ($poSupplier->status === 'pending_director_rec')
+                                <td class="px-6 py-4 text-center">
+                                    @if ($detail->is_compatible)
+                                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-100">Ya</span>
+                                    @else
+                                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-600 border border-red-100">Tidak</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    {{ $detail->reject_reason ?? '-' }}
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 </tbody>

@@ -14,7 +14,7 @@ class VerifikasiStockController extends Controller
     {
         // Get Supplier POs with pending and received statuses
         $poSuppliers = SupplierPo::with('supplier')
-            ->whereIn('status', ['pending', 'received'])
+            ->whereIn('status', ['ordered'])
             ->orderBy('po_date', 'desc')
             ->get();
 
@@ -86,7 +86,7 @@ class VerifikasiStockController extends Controller
                 if ($hasIncompatible) {
                     $poSupplier->update(['status' => 'pending_office']);
                 } else {
-                    $poSupplier->update(['status' => 'pending_director']);
+                    $poSupplier->update(['status' => 'pending_director_rec']);
                 }
             });
 

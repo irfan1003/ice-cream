@@ -58,8 +58,7 @@
                             <td class="px-6 py-4">
                                 @php
                                     $statusClass = [
-                                        'pending' => 'bg-amber-50 text-amber-600 border-amber-100',
-                                        'received' => 'bg-blue-50 text-blue-600 border-blue-100',
+                                        'ordered' => 'bg-blue-50 text-blue-600 border-blue-100',
                                     ];
                                 @endphp
                                 <span
@@ -68,27 +67,13 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @if ($po->status == 'pending')
-                                    <form action="{{ route('gudang.verifikasi.terima', $po->id_po_supplier) }}"
-                                        method="POST">
-                                        @csrf
-                                        <button type="submit"
-                                            class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Terima Barang
-                                        </button>
-                                    </form>
-                                @elseif($po->status == 'received')
+                                @if ($po->status == 'ordered')
                                     <a href="{{ route('gudang.verifikasi.show', $po->id_po_supplier) }}"
                                         class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         Mulai Verifikasi
                                     </a>

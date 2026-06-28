@@ -55,19 +55,21 @@
                             <td class="px-6 py-4">
                                 @php
                                     $statusStyles = [
-                                        'pending' => 'bg-yellow-100 text-yellow-700',
-                                        'received' => 'bg-blue-100 text-blue-700',
-                                        'pending_director' => 'bg-indigo-100 text-indigo-700',
+                                        'pending_director_po' => 'bg-yellow-100 text-yellow-700',
+                                        'revised' => 'bg-orange-100 text-orange-700',
+                                        'ordered' => 'bg-blue-100 text-blue-700',
+                                        'pending_director_rec' => 'bg-indigo-100 text-indigo-700',
                                         'pending_office' => 'bg-purple-100 text-purple-700',
-                                        'verified' => 'bg-green-100 text-green-700',
+                                        'received' => 'bg-green-100 text-green-700',
                                         'rejected' => 'bg-red-100 text-red-700',
                                     ];
                                     $statusLabels = [
-                                        'pending' => 'Pending',
-                                        'received' => 'Diterima Gudang',
-                                        'pending_director' => 'Menunggu Direktur',
+                                        'pending_director_po' => 'Menunggu Direktur (PO)',
+                                        'revised' => 'Perlu Direvisi',
+                                        'ordered' => 'Dipesan',
+                                        'pending_director_rec' => 'Menunggu Direktur (Penerimaan)',
                                         'pending_office' => 'Menunggu Admin Kantor',
-                                        'verified' => 'Terverifikasi',
+                                        'received' => 'Selesai / Diterima',
                                         'rejected' => 'Ditolak',
                                     ];
                                 @endphp
@@ -78,13 +80,21 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-2">
-                                    @if ($po->status !== 'verified')
+                                    @if (in_array($po->status, ['pending_director_po', 'revised']))
                                         <button onclick="showPoModal({{ $po->id_po_supplier }})" title="Edit P.O"
                                             class="p-2 text-brand-blue-dark hover:bg-blue-50 rounded-lg transition-all">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </button>
+                                    @endif
+                                    @if ($po->status === 'revised')
+                                        <button onclick="resubmitPo({{ $po->id_po_supplier }})" title="Kirim Ulang ke Direktur"
+                                            class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                             </svg>
                                         </button>
                                     @endif
@@ -97,7 +107,7 @@
                                                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                     </a>
-                                    @if ($po->status !== 'verified')
+                                    @if (in_array($po->status, ['pending_director_po', 'revised']))
                                         <button onclick="deletePo({{ $po->id_po_supplier }})" title="Hapus P.O"
                                             class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
@@ -298,6 +308,28 @@
                         form.method = 'POST';
                         form.action = `{{ url('admin/po-supplier') }}/${id}`;
                         form.innerHTML = `@csrf @method('DELETE')`;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            }
+
+            function resubmitPo(id) {
+                Swal.fire({
+                    title: 'Kirim Ulang PO?',
+                    text: 'Apakah Anda yakin ingin mengirim ulang PO ini ke Direktur?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#D97706',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: 'Ya, Kirim!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `{{ url('admin/po-supplier') }}/${id}/resubmit`;
+                        form.innerHTML = `@csrf`;
                         document.body.appendChild(form);
                         form.submit();
                     }

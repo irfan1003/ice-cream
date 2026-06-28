@@ -32,7 +32,7 @@ class BarangMasukController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $po = SupplierPo::with('details')->findOrFail($id);
-                $po->update(['status' => 'verified']);
+                $po->update(['status' => 'received']);
 
                 foreach ($po->details as $item) {
                     $product = Product::findOrFail($item->product_id);
@@ -51,7 +51,7 @@ class BarangMasukController extends Controller
                 }
             });
 
-            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier berhasil diverifikasi dan stok berhasil diupdate!');
+            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier berhasil diterima dan stok berhasil diupdate!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal memverifikasi PO Supplier: ' . $e->getMessage());
         }
@@ -62,7 +62,7 @@ class BarangMasukController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $po = SupplierPo::findOrFail($id);
-                $po->update(['status' => 'pending']);
+                $po->update(['status' => 'ordered']);
             });
 
             return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier dikirim kembali ke Gudang untuk verifikasi ulang!');
@@ -76,7 +76,7 @@ class BarangMasukController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $po = SupplierPo::with('details')->findOrFail($id);
-                $po->update(['status' => 'verified']);
+                $po->update(['status' => 'received']);
 
                 foreach ($po->details as $item) {
                     $product = Product::findOrFail($item->product_id);
@@ -95,7 +95,7 @@ class BarangMasukController extends Controller
                 }
             });
 
-            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier berhasil diverifikasi dengan penyesuaian stok!');
+            return redirect()->route('admin.barang-masuk.index')->with('success', 'PO Supplier berhasil diterima dengan penyesuaian stok!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal memverifikasi PO Supplier: ' . $e->getMessage());
         }

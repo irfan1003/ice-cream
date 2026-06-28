@@ -54,7 +54,7 @@ class PoSupplierController extends Controller
                 'created_by' => auth()->id(), // Assuming authenticated user
                 'po_number' => $poNumber,
                 'po_date' => $now,
-                'status' => 'pending', // Default status
+                'status' => 'pending_director_po', // Default status
             ]);
 
             foreach ($validatedData['products'] as $productData) {
@@ -119,6 +119,21 @@ class PoSupplierController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghapus Purchase Order: ' . $e->getMessage());
+        }
+    }
+
+    public function resubmit(SupplierPo $po_supplier)
+    {
+        try {
+            if ($po_supplier->status !== 'revised') {
+                return redirect()->back()->with('error', 'Hanya PO dengan status Perlu Direvisi yang dapat dikirim ulang.');
+            }
+
+            $po_supplier->update(['status' => 'pending_director_po']);
+
+            return redirect()->route('admin.po-supplier.index')->with('success', 'Purchase Order berhasil dikirim ulang ke Direktur!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengirim ulang Purchase Order: ' . $e->getMessage());
         }
     }
 
