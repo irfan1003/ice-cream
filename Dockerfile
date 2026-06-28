@@ -11,7 +11,12 @@ RUN apt-get update && apt-get install -y \
     unzip \
     chromium \
     gnupg \
+    libicu-dev \
     libzip-dev
+
+
+RUN docker-php-ext-configure intl \
+    && docker-php-ext-install pdo_mysql gd zip intl
 
 # Install NodeJS dan NPM secara global di server
 RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
