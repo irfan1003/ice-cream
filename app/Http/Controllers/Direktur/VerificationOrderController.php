@@ -62,11 +62,9 @@ class VerificationOrderController extends Controller
             DB::transaction(function () use ($id, &$invoiceUrl) {
                 $order = Order::with(['customer.zone', 'sales', 'orderDetail.product'])->findOrFail($id);
 
-                // Generate unique barcode key
                 $barcodeKey = Str::random(40);
                 $order->barcode_key = $barcodeKey;
 
-                // Generate PDF using Browsershot (Puppeteer)
                 $html = view('direktur.faktur-final', [
                     'order' => $order,
                     'isPdf' => true
@@ -76,22 +74,9 @@ class VerificationOrderController extends Controller
                 $filePath = 'invoices/' . $fileName;
                 $fullPath = storage_path('app/public/' . $filePath);
 
-                // Ensure directory exists
                 if (!file_exists(dirname($fullPath))) {
                     mkdir(dirname($fullPath), 0755, true);
                 }
-
-                // Browsershot::html($html)
-                //     ->setNodeBinary('C:/Program Files/nodejs/node.exe')
-                //     ->setNpmBinary('C:/Program Files/nodejs/npm.cmd')
-                //     // ->setChromePath('C:/Users/A c e r/.cache/puppeteer/chrome-headless-shell/win64-148.0.7778.97/chrome-headless-shell-win64/chrome-headless-shell.exe')
-                //     ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe')
-                //     ->noSandbox()
-                //     ->windowSize(1400, 2000)
-                //     ->showBackground()
-                //     ->margins(20, 20, 20, 20)
-                //     ->format('A4')
-                //     ->save($fullPath);
 
                 $browsershot = Browsershot::html($html);
 
@@ -101,6 +86,7 @@ class VerificationOrderController extends Controller
                         ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe');
                 } else {
                     $browsershot->setChromePath('/usr/bin/chromium')
+                        ->setNodeModulePath(base_path('node_modules'))
                         ->noSandbox();
                 }
 
@@ -110,14 +96,12 @@ class VerificationOrderController extends Controller
                     ->format('A4')
                     ->save($fullPath);
 
-                // Update Order
                 $order->update([
                     'status' => 'approved',
                     'invoice_pdf' => $filePath,
                     'barcode_key' => $barcodeKey
                 ]);
 
-                // Store invoice URL for the response
                 $invoiceUrl = asset('storage/' . $filePath);
             });
 
