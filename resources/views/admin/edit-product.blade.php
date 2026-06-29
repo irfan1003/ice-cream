@@ -132,7 +132,7 @@
                                     <p class="mb-1 text-sm text-slate-500"><span class="font-bold">Klik untuk ganti</span>
                                         atau tarik gambar ke sini</p>
                                 </div>
-                                <img id="imagePreview" src="{{ Storage::url($product->image) }}" class="absolute inset-0 w-full h-full object-cover {{ $product->image ? '' : 'hidden' }}" />
+                                <img id="imagePreview" src="{{ Storage::url($product->image) }}" alt="Produk" class="absolute inset-0 w-full h-full object-cover {{ $product->image ? '' : 'hidden' }}" />
                                 <input name="image" id="imageUpload" type="file" class="hidden" accept="image/*" />
                             </label>
                         </div>

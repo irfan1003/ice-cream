@@ -70,7 +70,7 @@
                                         <td class="px-6 py-4">
                                             <div class="flex items-center gap-4">
                                                 <div class="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
-                                                    <img src="{{ $detail->product->image ? asset($detail->product->image) : 'https://images.unsplash.com/photo-1501443762994-82bd5dabb892?q=80&w=100&auto=format&fit=crop' }}"
+                                                    <img src="{{ Storage::url($detail->product->image) }}" alt="Produk"
                                                         class="w-full h-full object-cover">
                                                 </div>
                                                 <div>
