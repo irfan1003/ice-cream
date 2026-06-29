@@ -2,9 +2,10 @@
 
 @section('content')
     <div x-data="poSystem()"
-        class="relative flex flex-col lg:flex-row h-[calc(100vh-120px)] bg-slate-50/50 rounded-3xl overflow-hidden border border-slate-200 shadow-sm">
+        class="relative flex flex-col lg:flex-row h-[calc(100vh-120px)] bg-slate-50/50 rounded-3xl overflow-hidden border border-slate-200 shadow-sm"
+        @keydown.escape.window="showCart = false">
         <!-- Product Section -->
-        <div class="flex-1 flex flex-col min-w-0 bg-white">
+        <div class="flex-1 flex flex-col min-w-0 min-h-0 bg-white">
             <!-- Header: Search & Filters -->
             <div class="p-6 border-b border-slate-100 space-y-6">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -41,7 +42,7 @@
             </div>
 
             <!-- Scrollable Grid -->
-            <div class="flex-1 overflow-y-auto p-6 bg-slate-50/30 scrollbar-hide">
+            <div class="flex-1 min-h-0 overflow-y-auto p-4 pb-24 lg:pb-6 bg-slate-50/30 scrollbar-hide">
                 <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-5 gap-6">
                     <template x-for="product in filteredProducts" :key="product.id_product">
                         <div @click="addToCart(product)" @dblclick="incrementQty(product.id_product)"
@@ -100,23 +101,62 @@
             </div>
         </div>
 
+        <!-- Mobile Floating Cart Button -->
+        <div class="lg:hidden fixed bottom-6 right-6 z-50">
+            <button @click="showCart = true"
+                class="relative w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-black/30 active:scale-95 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span x-show="cart.length > 0"
+                    class="absolute -top-2 -right-2 w-6 h-6 bg-brand-pink text-white text-xs font-black rounded-full flex items-center justify-center shadow-lg"
+                    x-text="cart.reduce((s,i)=>s+i.qty,0)"></span>
+            </button>
+        </div>
+
+        <!-- Mobile Cart Backdrop -->
+        <div x-show="showCart"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="showCart = false"
+            class="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40"
+            style="display:none;"></div>
+
         <!-- Cart Section -->
         <div id="cartPanel"
-            class="w-full lg:w-[400px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 flex flex-col relative z-10 shadow-2xl lg:shadow-none">
+            :class="showCart ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
+            class="fixed lg:relative bottom-0 left-0 right-0 lg:bottom-auto lg:left-auto lg:right-auto w-full lg:w-[400px] max-h-[85vh] lg:max-h-none bg-white border-t lg:border-t-0 lg:border-l border-slate-100 flex flex-col z-50 lg:z-10 shadow-2xl transition-transform duration-300 ease-out rounded-t-3xl lg:rounded-none">
+            <!-- Cart Handle (mobile only) -->
+            <div class="lg:hidden flex justify-center pt-3 pb-1">
+                <div class="w-10 h-1 bg-slate-300 rounded-full"></div>
+            </div>
+
             <!-- Cart Header -->
-            <div class="p-6 flex items-center justify-between">
+            <div class="px-6 py-4 flex items-center justify-between">
                 <div>
                     <h2 class="text-lg font-black text-slate-900 tracking-tight">Purchase Order</h2>
                     <p class="text-xs text-slate-500 font-medium"><span x-text="cart.length"></span> Items selected</p>
                 </div>
-                <button @click="clearCart()"
-                    class="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button @click="clearCart()"
+                        class="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                    <button @click="showCart = false"
+                        class="lg:hidden p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Cart Items -->
@@ -279,6 +319,7 @@
                 brandFilter: 'all',
                 loading: false,
                 showSalesModal: false,
+                showCart: false,
                 selectedSalesId: '',
 
                 get filteredProducts() {
@@ -419,6 +460,14 @@
         .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+
+        @media (min-width: 1024px) {
+            #cartPanel {
+                transform: none !important;
+                position: relative !important;
+                max-height: none !important;
+            }
         }
     </style>
 @endpush
