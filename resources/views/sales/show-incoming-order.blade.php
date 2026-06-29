@@ -50,7 +50,7 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-4">
                                         <div class="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
-                                            <img src="{{ Storage::url($detail->product->image) }}" alt="Produk" class="w-full h-full object-cover">
+                                            <img src="{{ Storage::url(ltrim($detail->product->image, '/')) }}" alt="Produk" class="w-full h-full object-cover">
                                         </div>
                                         <div>
                                             <div class="text-sm font-bold text-slate-900">{{ $detail->product->product_name }}</div>

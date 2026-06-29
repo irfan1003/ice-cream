@@ -54,7 +54,7 @@
                     <!-- Image -->
                     <div class="aspect-square bg-slate-50 relative border-b border-slate-100">
                         @if($product->image)
-                            <img src="{{ Storage::url($product->image) }}" alt="Produk" class="w-full h-full object-cover">
+                            <img src="{{ Storage::url(ltrim($product->image, '/')) }}" alt="Produk" class="w-full h-full object-cover">
                         @else
                             <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">

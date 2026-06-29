@@ -55,7 +55,7 @@
             <div
                 class="bg-white rounded-2xl border border-slate-100 custom-shadow overflow-hidden group hover:border-brand-pink transition-all">
                 <div class="h-48 overflow-hidden relative">
-                    <img src="{{ Storage::url($product->image) }}" alt="Produk"
+                    <img src="{{ Storage::url(ltrim($product->image, '/')) }}" alt="Produk"
                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                 </div>
                 <div class="p-5">

@@ -62,7 +62,7 @@
             <div class="group bg-white rounded-2xl p-4 border border-slate-100 hover:border-brand-blue/30 transition-all duration-300 hover:shadow-xl hover:shadow-brand-blue/5 hover:-translate-y-1">
                 <!-- Image Container -->
                 <div class="relative aspect-square rounded-xl bg-slate-50 overflow-hidden mb-4">
-                    <img src="{{ Storage::url($product->image) }}" 
+                    <img src="{{ Storage::url(ltrim($product->image, '/')) }}" 
                         alt="Produk"
                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                     

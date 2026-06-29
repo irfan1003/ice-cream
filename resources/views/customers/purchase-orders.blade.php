@@ -49,7 +49,7 @@
                             <!-- Image Container -->
                             <div
                                 class="relative aspect-square rounded-[1.5rem] bg-slate-100 overflow-hidden mb-4 shadow-inner">
-                                <img :src="product.image ? '{{ Storage::url('') }}/' + product.image : 'https://images.unsplash.com/photo-1501443762994-82bd5dabb892?q=80&w=400&auto=format&fit=crop'"
+                                <img :src="product.image ? '{{ Storage::url('') }}/' + product.image.replace(/^\//, '') : 'https://images.unsplash.com/photo-1501443762994-82bd5dabb892?q=80&w=400&auto=format&fit=crop'"
                                     alt="Produk"
                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                                 <div
@@ -125,7 +125,7 @@
                     <div class="flex items-center gap-4 group">
                         <div
                             class="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden flex-shrink-0 border border-slate-100 group-hover:border-brand-blue/30 transition-colors">
-                            <img :src="item.image ?  '{{ Storage::url('') }}/' + item.image : 'https://images.unsplash.com/photo-1501443762994-82bd5dabb892?q=80&w=400&auto=format&fit=crop'"
+                            <img :src="item.image ?  '{{ Storage::url('') }}/' + item.image.replace(/^\//, '') : 'https://images.unsplash.com/photo-1501443762994-82bd5dabb892?q=80&w=400&auto=format&fit=crop'"
                                 alt="Produk"
                                 class="w-full h-full object-cover">
                         </div>
