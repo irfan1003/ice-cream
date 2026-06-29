@@ -125,9 +125,9 @@
                                         @endif
 
                                         @if ($order->delivery && $order->delivery->delivery_status === 'ditolak')
-                                            <button onclick="openEditDeliveryDateModal({{ $order->delivery->id_deliver }}, '{{ $order->delivery->delivery_date }}')"
+                                            <button onclick="openEditDeliveryDateModal({{ $order->delivery->id_deliver }}, '{{ $order->delivery->delivery_date ?? '' }}', {{ $order->delivery->driver_id ?? 'null' }})"
                                                 class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                                                title="Edit Tanggal Pengiriman">
+                                                title="Edit Data Pengiriman">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -269,6 +269,14 @@
                 <div class="p-6 space-y-4">
                     <input type="hidden" id="driverModalOrderId" value="">
 
+                    <!-- Delivery Date Input -->
+                    <div>
+                        <label for="initial_delivery_date" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Tanggal Pengiriman</label>
+                        <input type="date" id="initial_delivery_date"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all outline-none text-sm text-slate-900 bg-white">
+                        <p id="initial_delivery_date_error" class="mt-1.5 text-xs text-red-500 hidden">Tanggal pengiriman wajib diisi.</p>
+                    </div>
+
                     <!-- Loading State -->
                     <div id="driverLoading" class="flex flex-col items-center justify-center py-8">
                         <svg class="animate-spin h-8 w-8 text-emerald-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -320,7 +328,7 @@
 
             <div class="relative bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl transition-all border border-slate-100">
                 <div class="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-900">Edit Tanggal Pengiriman</h3>
+                    <h3 class="text-lg font-bold text-slate-900">Edit Data Pengiriman</h3>
                     <button onclick="closeEditDeliveryDateModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -335,6 +343,14 @@
                             <input type="date" id="delivery_date_input"
                                 class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all outline-none text-sm text-slate-900">
                             <p id="delivery_date_error" class="mt-1.5 text-xs text-red-500 hidden">Tanggal pengiriman wajib diisi.</p>
+                        </div>
+                        <div>
+                            <label for="edit_driver_select" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Driver</label>
+                            <select id="edit_driver_select"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all outline-none text-sm text-slate-900 bg-white">
+                                <option value="">Pilih Driver...</option>
+                            </select>
+                            <p id="edit_driver_error" class="mt-1.5 text-xs text-red-500 hidden">Driver wajib diisi.</p>
                         </div>
                         <div class="flex items-center gap-3">
                             <button onclick="closeEditDeliveryDateModal()" class="flex-1 px-4 py-3 rounded-xl bg-slate-50 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all">
@@ -408,6 +424,11 @@
                 document.getElementById('driverModalOrderId').value = orderId;
                 selectedDriverId = null;
                 document.getElementById('btnConfirmDriver').disabled = true;
+
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('initial_delivery_date').value = today;
+                document.getElementById('initial_delivery_date_error').classList.add('hidden');
 
                 // Show loading, hide list
                 document.getElementById('driverLoading').classList.remove('hidden');
@@ -498,6 +519,15 @@
                 if (!selectedDriverId) return;
 
                 const orderId = document.getElementById('driverModalOrderId').value;
+                const deliveryDate = document.getElementById('initial_delivery_date').value;
+                const dateErrorEl = document.getElementById('initial_delivery_date_error');
+
+                if (!deliveryDate) {
+                    dateErrorEl.classList.remove('hidden');
+                    return;
+                }
+                dateErrorEl.classList.add('hidden');
+
                 const btn = document.getElementById('btnConfirmDriver');
                 const btnText = document.getElementById('btnConfirmDriverText');
                 const btnSpinner = document.getElementById('btnConfirmDriverSpinner');
@@ -512,7 +542,10 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ driver_id: selectedDriverId })
+                    body: JSON.stringify({ 
+                        driver_id: selectedDriverId,
+                        delivery_date: deliveryDate
+                    })
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -588,10 +621,53 @@
                     }
                 });
             }
-            function openEditDeliveryDateModal(deliveryId, currentDate) {
+            let editDriversLoaded = false;
+            let editAllDrivers = [];
+
+            function loadDriversForEdit(selectedDriverId) {
+                const selectEl = document.getElementById('edit_driver_select');
+                
+                const populateSelect = () => {
+                    let html = '<option value="">Pilih Driver...</option>';
+                    editAllDrivers.forEach(driver => {
+                        const isSelected = driver.id_user == selectedDriverId ? 'selected' : '';
+                        html += `<option value="${driver.id_user}" ${isSelected}>${driver.name} (${driver.email})</option>`;
+                    });
+                    selectEl.innerHTML = html;
+                };
+
+                if (editAllDrivers.length > 0) {
+                    populateSelect();
+                    return;
+                }
+
+                selectEl.innerHTML = '<option value="">Memuat daftar driver...</option>';
+
+                fetch('{{ route("gudang.incorders.drivers") }}', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(drivers => {
+                    editAllDrivers = drivers;
+                    populateSelect();
+                })
+                .catch(error => {
+                    selectEl.innerHTML = '<option value="">Gagal memuat driver</option>';
+                    console.error('Gagal memuat driver:', error);
+                });
+            }
+
+            function openEditDeliveryDateModal(deliveryId, currentDate, currentDriverId) {
                 document.getElementById('editDeliveryId').value = deliveryId;
                 document.getElementById('delivery_date_input').value = currentDate ? currentDate.substring(0, 10) : '';
                 document.getElementById('delivery_date_error').classList.add('hidden');
+                document.getElementById('edit_driver_error').classList.add('hidden');
+                
+                loadDriversForEdit(currentDriverId);
+
                 document.getElementById('editDeliveryDateModal').classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             }
@@ -604,14 +680,28 @@
             function confirmEditDeliveryDate() {
                 const id = document.getElementById('editDeliveryId').value;
                 const deliveryDate = document.getElementById('delivery_date_input').value;
-                const errorEl = document.getElementById('delivery_date_error');
+                const driverId = document.getElementById('edit_driver_select').value;
+                const dateErrorEl = document.getElementById('delivery_date_error');
+                const driverErrorEl = document.getElementById('edit_driver_error');
                 const btn = document.getElementById('btnSaveDeliveryDate');
 
+                let hasError = false;
+
                 if (!deliveryDate) {
-                    errorEl.classList.remove('hidden');
-                    return;
+                    dateErrorEl.classList.remove('hidden');
+                    hasError = true;
+                } else {
+                    dateErrorEl.classList.add('hidden');
                 }
-                errorEl.classList.add('hidden');
+
+                if (!driverId) {
+                    driverErrorEl.classList.remove('hidden');
+                    hasError = true;
+                } else {
+                    driverErrorEl.classList.add('hidden');
+                }
+
+                if (hasError) return;
 
                 btn.disabled = true;
                 btn.textContent = 'Menyimpan...';
@@ -622,7 +712,10 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ delivery_date: deliveryDate })
+                    body: JSON.stringify({ 
+                        delivery_date: deliveryDate,
+                        driver_id: driverId
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {

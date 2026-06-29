@@ -68,13 +68,13 @@
                 :class="activeTab === 'orders' ? 'border-brand-blue text-brand-blue' :
                     'border-transparent text-slate-500 hover:text-slate-700'"
                 class="px-6 py-3 text-sm font-bold border-b-2 transition-all duration-200">
-                Pesanan Reguler
+                Pesanan
             </button>
             <button @click="activeTab = 'pos'"
                 :class="activeTab === 'pos' ? 'border-brand-pink text-brand-pink' :
                     'border-transparent text-slate-500 hover:text-slate-700'"
                 class="px-6 py-3 text-sm font-bold border-b-2 transition-all duration-200">
-                Purchase Order (PO)
+                P.O
             </button>
         </div>
 
@@ -365,17 +365,6 @@
                                                 </button>
 
                                                 @if ($po->status === 'approved')
-                                                    {{-- Convert to regular order --}}
-                                                    <button onclick="convertPO({{ $po->id_po }})"
-                                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white transition-all shadow-sm"
-                                                        title="Ubah ke Pesanan Reguler">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                                        </svg>
-                                                    </button>
                                                     {{-- Export single --}}
                                                     <a href="{{ route('admin.po.export-single', $po->id_po) }}"
                                                         class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
@@ -653,47 +642,6 @@
             function closeModal(id) {
                 document.getElementById(id).classList.add('hidden');
                 document.body.style.overflow = 'auto';
-            }
-
-            // ── Convert PO ───────────────────────────────────────────────
-            async function convertPO(id) {
-                const result = await Swal.fire({
-                    title: 'Konfirmasi Konversi',
-                    text: "Apakah Anda yakin ingin mengkonversi PO ini menjadi Pesanan Reguler?",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#8B5CF6',
-                    cancelButtonColor: '#94A3B8',
-                    confirmButtonText: 'Ya, Konversi!',
-                    cancelButtonText: 'Batal'
-                });
-
-                if (result.isConfirmed) {
-                    try {
-                        const response = await fetch(`/admin/purchase-orders/${id}/convert`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil!',
-                                    text: data.message,
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                })
-                                .then(() => location.reload());
-                        } else {
-                            Swal.fire('Gagal', data.message, 'error');
-                        }
-                    } catch (error) {
-                        Swal.fire('Error', 'Gagal menghubungi server.', 'error');
-                    }
-                }
             }
 
             // ── Mark as Paid ─────────────────────────────────────────────

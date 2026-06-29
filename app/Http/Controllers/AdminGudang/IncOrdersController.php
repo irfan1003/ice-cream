@@ -50,6 +50,7 @@ class IncOrdersController extends Controller
         try {
             $request->validate([
                 'driver_id' => 'required|exists:users,id_user',
+                'delivery_date' => 'required|date',
             ]);
 
             $order = Order::with(['customer.zone', 'sales', 'orderDetail.product'])->findOrFail($id);
@@ -62,6 +63,7 @@ class IncOrdersController extends Controller
                 'order_id' => $order->id_order,
                 'spb_number' => $spbNumber,
                 'driver_id' => $request->driver_id,
+                'delivery_date' => $request->delivery_date,
                 'file_surat_jalan' => null,
                 'delivery_status' => 'pending_admin_kantor'
             ]);
@@ -83,6 +85,7 @@ class IncOrdersController extends Controller
     {
         $request->validate([
             'delivery_date' => 'required|date',
+            'driver_id' => 'required|exists:users,id_user',
         ]);
 
         try {
@@ -91,6 +94,7 @@ class IncOrdersController extends Controller
             $delivery = \App\Models\Delivery::findOrFail($id);
             $delivery->update([
                 'delivery_date' => $request->input('delivery_date'),
+                'driver_id' => $request->input('driver_id'),
                 'delivery_status' => 'pending_admin_kantor' 
             ]);
 
@@ -98,13 +102,13 @@ class IncOrdersController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tanggal pengiriman berhasil diperbarui.',
+                'message' => 'Data pengiriman berhasil diperbarui.',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memperbarui tanggal: ' . $e->getMessage()
+                'message' => 'Gagal memperbarui data pengiriman: ' . $e->getMessage()
             ], 500);
         }
     }

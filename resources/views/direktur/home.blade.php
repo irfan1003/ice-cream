@@ -96,13 +96,13 @@
                 :class="activeTab === 'orders' ? 'border-brand-blue text-brand-blue' :
                     'border-transparent text-slate-500 hover:text-slate-700'"
                 class="px-6 py-3 text-sm font-bold border-b-2 transition-all duration-200">
-                Pesanan Reguler
+                Pesanan
             </button>
             <button @click="activeTab = 'pos'"
                 :class="activeTab === 'pos' ? 'border-brand-pink text-brand-pink' :
                     'border-transparent text-slate-500 hover:text-slate-700'"
                 class="px-6 py-3 text-sm font-bold border-b-2 transition-all duration-200">
-                Purchase Order (PO)
+                P.O
             </button>
         </div>
 

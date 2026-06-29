@@ -16,12 +16,12 @@
                 <button @click="activeTab = 'orders'"
                     :class="activeTab === 'orders' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'"
                     class="px-6 py-3 text-sm font-bold border-b-2 transition-colors">
-                    Pesanan Reguler
+                    Pesanan
                 </button>
                 <button @click="activeTab = 'pos'"
                     :class="activeTab === 'pos' ? 'border-brand-pink text-brand-pink' : 'border-transparent text-slate-500 hover:text-slate-700'"
                     class="px-6 py-3 text-sm font-bold border-b-2 transition-colors">
-                    Purchase Order (PO)
+                    P.O
                 </button>
             </div>
 
@@ -52,20 +52,24 @@
                         <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div class="flex items-center gap-3">
                                 <div class="p-2 rounded-lg bg-white border border-slate-100 text-slate-400 shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $table['icon'] }}" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="{{ $table['icon'] }}" />
                                     </svg>
                                 </div>
                                 <h2 class="text-base font-bold text-slate-900">{{ $table['title'] }}</h2>
                             </div>
-                            <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 shadow-sm">
+                            <span
+                                class="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 shadow-sm">
                                 {{ $filteredOrders->count() }} Orders
                             </span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50/30 text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-100">
+                                    <tr
+                                        class="bg-slate-50/30 text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-100">
                                         <th class="px-6 py-4 font-bold">No. Pesanan</th>
                                         <th class="px-6 py-4 font-bold">Tanggal</th>
                                         <th class="px-6 py-4 font-bold text-right">Total</th>
@@ -75,54 +79,58 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-sm">
                                     @forelse($filteredOrders as $order)
-                                        <tr class="hover:bg-slate-50/50 transition-colors">
-                                            <td class="px-6 py-4 font-bold text-slate-900">
-                                                #{{ $order->order_number }}
-                                            </td>
-                                            <td class="px-6 py-4 text-slate-600">
-                                                {{ \Carbon\Carbon::parse($order->order_date)->format('d M Y') }}
-                                            </td>
-                                            <td class="px-6 py-4 text-right font-bold text-slate-900">
-                                                Rp {{ number_format($order->grand_total, 0, ',', '.') }}
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                @php
-                                                    $displayStatus = $order->status;
-                                                    if ($order->delivery && in_array($order->delivery->delivery_status, ['shipped', 'delivered'])) {
-                                                        $displayStatus = $order->delivery->delivery_status;
-                                                    }
+                                                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                                                <td class="px-6 py-4 font-bold text-slate-900">
+                                                                    #{{ $order->order_number }}
+                                                                </td>
+                                                                <td class="px-6 py-4 text-slate-600">
+                                                                    {{ \Carbon\Carbon::parse($order->order_date)->format('d M Y') }}
+                                                                </td>
+                                                                <td class="px-6 py-4 text-right font-bold text-slate-900">
+                                                                    Rp {{ number_format($order->grand_total, 0, ',', '.') }}
+                                                                </td>
+                                                                <td class="px-6 py-4 text-center">
+                                                                    @php
+                                                                        $displayStatus = $order->status;
+                                                                        if ($order->delivery && in_array($order->delivery->delivery_status, ['shipped', 'delivered'])) {
+                                                                            $displayStatus = $order->delivery->delivery_status;
+                                                                        }
 
-                                                    $statusConfig = [
-                                                        'pending_sales' => ['label' => 'Menunggu Sales', 'class' => 'bg-amber-100 text-amber-700 border border-amber-200'],
-                                                        'pending_coordinator' => ['label' => 'Menunggu Koordinator', 'class' => 'bg-blue-100 text-blue-700 border border-blue-200'],
-                                                        'pending_director' => ['label' => 'Menunggu Direktur', 'class' => 'bg-indigo-100 text-indigo-700 border border-indigo-200'],
-                                                        'revised' => ['label' => 'Direvisi', 'class' => 'bg-orange-100 text-orange-700 border border-orange-200'],
-                                                        'approved' => ['label' => 'Disetujui', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
-                                                        'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-100 text-rose-700 border border-rose-200'],
-                                                        'pending_admin' => ['label' => 'Menunggu Admin', 'class' => 'bg-cyan-100 text-cyan-700 border border-cyan-200'],
-                                                        'shipped' => ['label' => 'Dikirim', 'class' => 'bg-purple-100 text-purple-700 border border-purple-200'],
-                                                        'delivered' => ['label' => 'Diterima', 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'],
-                                                        'completed' => ['label' => 'Selesai', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
-                                                    ];
-                                                    $status = $statusConfig[$displayStatus] ?? ['label' => $displayStatus, 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'];
-                                                @endphp
-                                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $status['class'] }}">
-                                                    {{ $status['label'] }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                <div class="flex justify-center gap-2">
-                                                    <button onclick="showOrderDetail({{ json_encode($order) }})" 
-                                                            class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-blue-100"
-                                                            title="Lihat Detail">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                                        $statusConfig = [
+                                                                            'pending_sales' => ['label' => 'Menunggu Sales', 'class' => 'bg-amber-100 text-amber-700 border border-amber-200'],
+                                                                            'pending_coordinator' => ['label' => 'Menunggu Koordinator', 'class' => 'bg-blue-100 text-blue-700 border border-blue-200'],
+                                                                            'pending_director' => ['label' => 'Menunggu Direktur', 'class' => 'bg-indigo-100 text-indigo-700 border border-indigo-200'],
+                                                                            'revised' => ['label' => 'Direvisi', 'class' => 'bg-orange-100 text-orange-700 border border-orange-200'],
+                                                                            'approved' => ['label' => 'Disetujui', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
+                                                                            'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-100 text-rose-700 border border-rose-200'],
+                                                                            'pending_admin' => ['label' => 'Menunggu Admin', 'class' => 'bg-cyan-100 text-cyan-700 border border-cyan-200'],
+                                                                            'shipped' => ['label' => 'Dikirim', 'class' => 'bg-purple-100 text-purple-700 border border-purple-200'],
+                                                                            'delivered' => ['label' => 'Diterima', 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'],
+                                                                            'completed' => ['label' => 'Selesai', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
+                                                                        ];
+                                                                        $status = $statusConfig[$displayStatus] ?? ['label' => $displayStatus, 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'];
+                                                                    @endphp
+                                         <span
+                                                                        class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $status['class'] }}">
+                                                                        {{ $status['label'] }}
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-6 py-4 text-center">
+                                                                    <div class="flex justify-center gap-2">
+                                                                        <button onclick="showOrderDetail({{ json_encode($order) }})"
+                                                                            class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-blue-100"
+                                                                            title="Lihat Detail">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
                                     @empty
                                         <tr>
                                             <td colspan="5" class="px-6 py-12 text-center text-slate-500 italic">
@@ -138,7 +146,8 @@
             </div>
 
             <!-- Purchase Orders Tab Content -->
-            <div x-show="activeTab === 'pos'" style="display: none;" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div x-show="activeTab === 'pos'" style="display: none;"
+                class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 @php
                     $poTables = [
                         ['title' => 'Menunggu Persetujuan', 'statuses' => ['pending_sales', 'pending_coordinator', 'pending_admin', 'pending_director'], 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
@@ -157,20 +166,24 @@
                         <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div class="flex items-center gap-3">
                                 <div class="p-2 rounded-lg bg-white border border-slate-100 text-slate-400 shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $table['icon'] }}" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="{{ $table['icon'] }}" />
                                     </svg>
                                 </div>
                                 <h2 class="text-base font-bold text-slate-900">{{ $table['title'] }}</h2>
                             </div>
-                            <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 shadow-sm">
+                            <span
+                                class="px-3 py-1 bg-white border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 shadow-sm">
                                 {{ $filteredPOs->count() }} P.O
                             </span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50/30 text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-100">
+                                    <tr
+                                        class="bg-slate-50/30 text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-100">
                                         <th class="px-6 py-4 font-bold">No. PO</th>
                                         <th class="px-6 py-4 font-bold">Tanggal</th>
                                         <th class="px-6 py-4 font-bold text-right">Total</th>
@@ -180,47 +193,50 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-sm">
                                     @forelse($filteredPOs as $po)
-                                        <tr class="hover:bg-slate-50/50 transition-colors">
-                                            <td class="px-6 py-4 font-bold text-slate-900">
-                                                {{ $po->po_number }}
-                                            </td>
-                                            <td class="px-6 py-4 text-slate-600">
-                                                {{ \Carbon\Carbon::parse($po->po_date)->format('d M Y') }}
-                                            </td>
-                                            <td class="px-6 py-4 text-right font-bold text-slate-900">
-                                                Rp {{ number_format($po->grand_total, 0, ',', '.') }}
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                @php
-                                                    $poStatusConfig = [
-                                                        'pending_sales' => ['label' => 'Menunggu Sales', 'class' => 'bg-amber-100 text-amber-700 border border-amber-200'],
-                                                        'pending_coordinator' => ['label' => 'Menunggu Koordinator', 'class' => 'bg-blue-100 text-blue-700 border border-blue-200'],
-                                                        'pending_admin' => ['label' => 'Menunggu Admin', 'class' => 'bg-cyan-100 text-cyan-700 border border-cyan-200'],
-                                                        'pending_director' => ['label' => 'Menunggu Direktur', 'class' => 'bg-indigo-100 text-indigo-700 border border-indigo-200'],
-                                                        'approved' => ['label' => 'Disetujui', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
-                                                        'revised' => ['label' => 'Direvisi', 'class' => 'bg-orange-100 text-orange-700 border border-orange-200'],
-                                                        'stock_arrived' => ['label' => 'Stok Tiba', 'class' => 'bg-purple-100 text-purple-700 border border-purple-200'],
-                                                        'converted' => ['label' => 'Dikonversi', 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'],
-                                                        'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-100 text-rose-700 border border-rose-200'],
-                                                    ];
-                                                    $poStatus = $poStatusConfig[$po->status] ?? ['label' => $po->status, 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'];
-                                                @endphp
-                                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $poStatus['class'] }}">
-                                                    {{ $poStatus['label'] }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                <div class="flex justify-center gap-2">
-                                                    <button onclick="showPODetail({{ json_encode($po) }})" 
+                                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                                <td class="px-6 py-4 font-bold text-slate-900">
+                                                    {{ $po->po_number }}
+                                                </td>
+                                                <td class="px-6 py-4 text-slate-600">
+                                                    {{ \Carbon\Carbon::parse($po->po_date)->format('d M Y') }}
+                                                </td>
+                                                <td class="px-6 py-4 text-right font-bold text-slate-900">
+                                                    Rp {{ number_format($po->grand_total, 0, ',', '.') }}
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    @php
+                                                        $poStatusConfig = [
+                                                            'pending_sales' => ['label' => 'Menunggu Sales', 'class' => 'bg-amber-100 text-amber-700 border border-amber-200'],
+                                                            'pending_coordinator' => ['label' => 'Menunggu Koordinator', 'class' => 'bg-blue-100 text-blue-700 border border-blue-200'],
+                                                            'pending_admin' => ['label' => 'Menunggu Admin', 'class' => 'bg-cyan-100 text-cyan-700 border border-cyan-200'],
+                                                            'pending_director' => ['label' => 'Menunggu Direktur', 'class' => 'bg-indigo-100 text-indigo-700 border border-indigo-200'],
+                                                            'approved' => ['label' => 'Disetujui', 'class' => 'bg-emerald-100 text-emerald-700 border border-emerald-200'],
+                                                            'revised' => ['label' => 'Direvisi', 'class' => 'bg-orange-100 text-orange-700 border border-orange-200'],
+                                                            'stock_arrived' => ['label' => 'Stok Tiba', 'class' => 'bg-purple-100 text-purple-700 border border-purple-200'],
+                                                            'converted' => ['label' => 'Dikonversi', 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'],
+                                                            'rejected' => ['label' => 'Ditolak', 'class' => 'bg-rose-100 text-rose-700 border border-rose-200'],
+                                                        ];
+                                                        $poStatus = $poStatusConfig[$po->status] ?? ['label' => $po->status, 'class' => 'bg-slate-100 text-slate-700 border border-slate-200'];
+                                                    @endphp
+                                        <span
+                                                        class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $poStatus['class'] }}">
+                                                        {{ $poStatus['label'] }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <div class="flex justify-center gap-2">
+                                                        <button onclick="showPODetail({{ json_encode($po) }})"
                                                             class="p-1.5 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-all shadow-sm border border-transparent hover:border-pink-100"
                                                             title="Lihat Detail PO">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                     @empty
                                         <tr>
                                             <td colspan="5" class="px-6 py-12 text-center text-slate-500 italic">
@@ -413,15 +429,15 @@
 
                 details.forEach(item => {
                     itemsHtml += `
-                            <tr>
-                                <td class="px-4 py-3">
-                                    <div class="font-medium text-slate-900">${item.product ? item.product.product_name : 'Produk tidak tersedia'}</div>
-                                </td>
-                                <td class="px-4 py-3 text-center text-slate-600">${item.qty}</td>
-                                <td class="px-4 py-3 text-right text-slate-600">Rp ${new Intl.NumberFormat('id-ID').format(item.price_at_time)}</td>
-                                <td class="px-4 py-3 text-right font-medium text-slate-900">Rp ${new Intl.NumberFormat('id-ID').format(item.total_item_price)}</td>
-                            </tr>
-                        `;
+                                    <tr>
+                                        <td class="px-4 py-3">
+                                            <div class="font-medium text-slate-900">${item.product ? item.product.product_name : 'Produk tidak tersedia'}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-center text-slate-600">${item.qty}</td>
+                                        <td class="px-4 py-3 text-right text-slate-600">Rp ${new Intl.NumberFormat('id-ID').format(item.price_at_time)}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-slate-900">Rp ${new Intl.NumberFormat('id-ID').format(item.total_item_price)}</td>
+                                    </tr>
+                                `;
                 });
 
                 itemsContainer.innerHTML = itemsHtml;
@@ -461,15 +477,15 @@
 
                 details.forEach(item => {
                     itemsHtml += `
-                            <tr>
-                                <td class="px-4 py-3">
-                                    <div class="font-medium text-slate-900">${item.product ? item.product.product_name : 'Produk tidak tersedia'}</div>
-                                </td>
-                                <td class="px-4 py-3 text-center text-slate-600">${item.qty}</td>
-                                <td class="px-4 py-3 text-right text-slate-600">Rp ${new Intl.NumberFormat('id-ID').format(item.price_at_time)}</td>
-                                <td class="px-4 py-3 text-right font-medium text-slate-900">Rp ${new Intl.NumberFormat('id-ID').format(item.total_item_price)}</td>
-                            </tr>
-                        `;
+                                    <tr>
+                                        <td class="px-4 py-3">
+                                            <div class="font-medium text-slate-900">${item.product ? item.product.product_name : 'Produk tidak tersedia'}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-center text-slate-600">${item.qty}</td>
+                                        <td class="px-4 py-3 text-right text-slate-600">Rp ${new Intl.NumberFormat('id-ID').format(item.price_at_time)}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-slate-900">Rp ${new Intl.NumberFormat('id-ID').format(item.total_item_price)}</td>
+                                    </tr>
+                                `;
                 });
 
                 itemsContainer.innerHTML = itemsHtml;
