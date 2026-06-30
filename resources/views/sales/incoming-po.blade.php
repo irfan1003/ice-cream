@@ -36,7 +36,7 @@
                     </svg>
                     Kirim PO Terpilih ke Koordinator
                 </button>
-                <button type="button" onclick="toggleAllCheckboxes()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all">
+                <button type="button" id="toggleAllBtn" onclick="toggleAllCheckboxes(this)" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all">
                     Pilih Semua
                 </button>
             </div>
@@ -49,7 +49,7 @@
                         <tr class="bg-slate-50/50 border-b border-slate-100">
                             @if($purchaseOrders->count() > 0)
                                 <th class="px-4 py-4 text-center">
-                                    <input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()" class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 focus:ring-2">
+                                    <input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)" class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 focus:ring-2">
                                 </th>
                             @endif
                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">No. PO</th>
@@ -116,14 +116,44 @@
 
 @push('scripts')
 <script>
-    function toggleAllCheckboxes() {
-        const selectAll = document.getElementById('selectAll');
+    function toggleAllCheckboxes(source) {
         const checkboxes = document.querySelectorAll('.po-checkbox');
+        let checkedState;
+        
+        if (source && source.type === 'checkbox') {
+            checkedState = source.checked;
+        } else {
+            const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(checkbox => checkbox.checked);
+            checkedState = !allChecked;
+        }
         
         checkboxes.forEach(checkbox => {
-            checkbox.checked = selectAll ? selectAll.checked : !checkbox.checked;
+            checkbox.checked = checkedState;
         });
+        
+        updateSelectAllState();
     }
+
+    function updateSelectAllState() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.po-checkbox');
+        const toggleBtn = document.getElementById('toggleAllBtn');
+        
+        const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(checkbox => checkbox.checked);
+        
+        if (selectAll) {
+            selectAll.checked = allChecked;
+        }
+        
+        if (toggleBtn) {
+            toggleBtn.textContent = allChecked ? 'Batal Pilih' : 'Pilih Semua';
+        }
+    }
+
+    // Bind change listener ke checkbox individual
+    document.querySelectorAll('.po-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectAllState);
+    });
 
     // Validasi sebelum submit
     document.getElementById('batchForm').addEventListener('submit', function(e) {

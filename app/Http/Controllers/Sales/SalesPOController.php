@@ -39,7 +39,7 @@ class SalesPOController extends Controller
             $po->sales_id = auth()->id();
             $po->created_by = auth()->id();
             $po->po_date = now();
-            $po->status = 'pending_coordinator';
+            $po->status = 'pending_sales';
             $po->subtotal = 0;
             $po->tax_amount = 0;
             $po->discount_total = 0;
