@@ -82,7 +82,14 @@ class DriverHomeController extends Controller
 
                 $browsershot->setChromePath('/usr/bin/chromium')
                     ->setNodeModulePath(base_path('node_modules'))
-                    ->noSandbox();
+                    ->noSandbox()
+                    ->addChromiumArguments([
+            'disable-gpu' => null,
+            'disable-dev-shm-usage' => null,
+            'disable-setuid-sandbox' => null,
+            'no-first-run' => null,
+            'no-zygote' => null,
+        ]);
             }
 
             $browsershot->windowSize(1400, 2000)
