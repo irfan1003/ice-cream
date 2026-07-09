@@ -89,12 +89,12 @@ class VerificationOrderController extends Controller
                         ->setNodeModulePath(base_path('node_modules'))
                         ->noSandbox()
                         ->addChromiumArguments([
-                        '--disable-gpu',
-                        '--disable-dev-shm-usage',
-                        '--disable-setuid-sandbox',
-                        '--no-first-run',
-                        '--no-zygote' 
-                        ]);
+            'disable-gpu' => null,
+            'disable-dev-shm-usage' => null,
+            'disable-setuid-sandbox' => null,
+            'no-first-run' => null,
+            'no-zygote' => null,
+        ]);
                 }
 
                 $browsershot->windowSize(1400, 2000)
