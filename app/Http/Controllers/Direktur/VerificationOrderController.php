@@ -87,7 +87,14 @@ class VerificationOrderController extends Controller
                 } else {
                     $browsershot->setChromePath('/usr/bin/chromium')
                         ->setNodeModulePath(base_path('node_modules'))
-                        ->noSandbox();
+                        ->noSandbox()
+                        ->addChromiumArguments([
+                        '--disable-gpu',
+                        '--disable-dev-shm-usage',
+                        '--disable-setuid-sandbox',
+                        '--no-first-run',
+                        '--no-zygote' 
+                        ]);
                 }
 
                 $browsershot->windowSize(1400, 2000)
